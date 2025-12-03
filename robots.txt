@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://conbyt.com/sitemap.xml
+
+# Allow all search engines to crawl your site
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# Disallow crawling of any admin or private areas (if you add them later)
+# Disallow: /admin/
+# Disallow: /private/
+
+# Crawl delay (optional - helps with server load)
+Crawl-delay: 1 

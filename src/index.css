@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  background-color: #09090f;
+}
+
+body {
+  @apply bg-gradient-to-br from-primary via-secondary to-surface text-text min-h-screen;
+}
+
+/* Prevent overflow on body and html */
+html, body {
+  overflow-x: hidden;
+}
