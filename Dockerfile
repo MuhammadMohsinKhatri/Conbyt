@@ -10,6 +10,9 @@ COPY package*.json ./
 # Install frontend dependencies
 RUN npm ci
 
+# Clear any build caches
+RUN rm -rf node_modules/.vite .vite dist
+
 # Copy frontend source code
 COPY . .
 

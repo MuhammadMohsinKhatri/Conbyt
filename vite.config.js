@@ -22,5 +22,10 @@ export default defineConfig({
         }
       }
     }
+  },
+  resolve: {
+    // Ensure case-sensitive imports work correctly
+    preserveSymlinks: false,
+    dedupe: []
   }
 })
