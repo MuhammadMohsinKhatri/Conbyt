@@ -9,7 +9,7 @@ import c1 from "../assets/companies/c1.png";
 import c2 from "../assets/companies/c2.svg";
 import c3 from "../assets/companies/c3.png";
 import c4 from "../assets/companies/c4.svg";
-import c5 from "../assets/companies/C5.png";
+import c5 from "../assets/companies/c5.png";
 import c6 from "../assets/companies/c6.png";
 import c7 from "../assets/companies/c7.png";
 import c8 from "../assets/companies/c8.png";
