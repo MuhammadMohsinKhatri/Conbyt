@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
-  FaSignOutAlt, FaUsers, FaProjectDiagram, FaTasks, 
+  FaUsers, FaProjectDiagram, FaTasks, 
   FaDollarSign, FaFolderOpen, FaFileAlt, FaEnvelope,
-  FaChartLine, FaPlus
+  FaPlus
 } from 'react-icons/fa';
 import { fetchAdminBlogs, fetchAdminClients, fetchAdminProjects, fetchAdminPayments } from '../../utils/api.js';
 
@@ -82,22 +82,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-primary">
-      {/* Header */}
-      <header className="bg-surface border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <FaChartLine className="text-accent text-2xl" />
-            <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 hover:bg-red-500/30 transition"
-          >
-            <FaSignOutAlt /> Logout
-          </button>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         {error && (
