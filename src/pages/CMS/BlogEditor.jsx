@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaSave, FaTimes, FaEye, FaImage } from 'react-icons/fa';
 import SEOPlugin from '../../components/SEO/SEOPlugin';
+import { fetchAdminBlog, createAdminBlog, updateAdminBlog } from '../../utils/api.js';
 
 const BlogEditor = () => {
   const { id } = useParams();
@@ -73,20 +74,13 @@ const BlogEditor = () => {
   const fetchBlog = async () => {
     try {
       const token = localStorage.getItem('cms_token');
-      const response = await fetch(`http://localhost:5000/api/admin/blogs/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.status === 401) {
+      const data = await fetchAdminBlog(id, token);
+      setFormData(data);
+    } catch (error) {
+      if (error.message && (error.message.includes('401') || error.message.includes('Token'))) {
         navigate('/cms/login');
         return;
       }
-
-      const data = await response.json();
-      setFormData(data);
-    } catch (error) {
       setError('Failed to fetch blog post');
     }
   };
@@ -105,34 +99,19 @@ const BlogEditor = () => {
 
     try {
       const token = localStorage.getItem('cms_token');
-      const url = isEdit
-        ? `http://localhost:5000/api/admin/blogs/${id}`
-        : 'http://localhost:5000/api/admin/blogs';
-
-      const method = isEdit ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        navigate('/cms/dashboard');
+      
+      if (isEdit) {
+        await updateAdminBlog(id, formData, token);
       } else {
-        if (data.error && data.error.includes('Slug')) {
-          setSlugError(data.error);
-        } else {
-          setError(data.error || 'Failed to save blog post');
-        }
+        await createAdminBlog(formData, token);
       }
+      navigate('/cms/dashboard');
     } catch (error) {
-      setError('Network error. Please check if the server is running.');
+      if (error.message && error.message.includes('Slug')) {
+        setSlugError(error.message);
+      } else {
+        setError(error.message || 'Network error. Please check if the server is running.');
+      }
     } finally {
       setLoading(false);
     }

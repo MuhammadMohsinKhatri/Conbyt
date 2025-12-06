@@ -21,22 +21,16 @@ const ContactSubmissions = () => {
   const fetchSubmissions = async () => {
     try {
       const token = localStorage.getItem('cms_token');
-      const response = await fetch('http://localhost:5000/api/admin/contact', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.status === 401) {
+      const { fetchAdminContact } = await import('../../utils/api.js');
+      const data = await fetchAdminContact(token);
+      setSubmissions(data);
+    } catch (error) {
+      if (error.message && (error.message.includes('401') || error.message.includes('Token'))) {
         localStorage.removeItem('cms_token');
         localStorage.removeItem('cms_user');
         navigate('/cms/login');
         return;
       }
-
-      const data = await response.json();
-      setSubmissions(data);
-    } catch (error) {
       setError('Failed to fetch contact submissions');
     } finally {
       setLoading(false);
@@ -50,12 +44,8 @@ const ContactSubmissions = () => {
 
     try {
       const token = localStorage.getItem('cms_token');
-      const response = await fetch(`http://localhost:5000/api/admin/contact/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const { deleteAdminContact } = await import('../../utils/api.js');
+      await deleteAdminContact(id, token);
 
       if (response.ok) {
         setSubmissions(submissions.filter(sub => sub.id !== id));

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaLock, FaUser } from 'react-icons/fa';
+import { adminLogin } from '../../utils/api.js';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -17,25 +18,12 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/admin/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('cms_token', data.token);
-        localStorage.setItem('cms_user', JSON.stringify(data.user));
-        navigate('/cms/dashboard');
-      } else {
-        setError(data.error || 'Login failed');
-      }
+      const data = await adminLogin(formData.username, formData.password);
+      localStorage.setItem('cms_token', data.token);
+      localStorage.setItem('cms_user', JSON.stringify(data.user));
+      navigate('/cms/dashboard');
     } catch (error) {
-      setError('Network error. Please check if the server is running.');
+      setError(error.message || 'Network error. Please check if the server is running.');
     } finally {
       setLoading(false);
     }

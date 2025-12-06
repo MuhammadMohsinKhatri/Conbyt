@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaEye, FaSignOutAlt, FaFileAlt, FaEnvelope } from 'react-icons/fa';
+import { fetchAdminBlogs, deleteAdminBlog } from '../../utils/api.js';
 
 const Dashboard = () => {
   const [blogs, setBlogs] = useState([]);
@@ -20,22 +21,15 @@ const Dashboard = () => {
   const fetchBlogs = async () => {
     try {
       const token = localStorage.getItem('cms_token');
-      const response = await fetch('http://localhost:5000/api/admin/blogs', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.status === 401) {
+      const data = await fetchAdminBlogs(token);
+      setBlogs(data);
+    } catch (error) {
+      if (error.message.includes('401') || error.message.includes('Token')) {
         localStorage.removeItem('cms_token');
         localStorage.removeItem('cms_user');
         navigate('/cms/login');
         return;
       }
-
-      const data = await response.json();
-      setBlogs(data);
-    } catch (error) {
       setError('Failed to fetch blogs');
     } finally {
       setLoading(false);
@@ -49,20 +43,10 @@ const Dashboard = () => {
 
     try {
       const token = localStorage.getItem('cms_token');
-      const response = await fetch(`http://localhost:5000/api/admin/blogs/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        setBlogs(blogs.filter(blog => blog.id !== id));
-      } else {
-        alert('Failed to delete blog post');
-      }
+      await deleteAdminBlog(id, token);
+      setBlogs(blogs.filter(blog => blog.id !== id));
     } catch (error) {
-      alert('Error deleting blog post');
+      alert('Error deleting blog post: ' + error.message);
     }
   };
 
