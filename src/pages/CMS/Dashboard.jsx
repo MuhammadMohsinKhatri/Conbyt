@@ -1,10 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FaPlus, FaEdit, FaTrash, FaEye, FaSignOutAlt, FaFileAlt, FaEnvelope } from 'react-icons/fa';
-import { fetchAdminBlogs, deleteAdminBlog } from '../../utils/api.js';
+import { 
+  FaSignOutAlt, FaUsers, FaProjectDiagram, FaTasks, 
+  FaDollarSign, FaFolderOpen, FaFileAlt, FaEnvelope,
+  FaChartLine, FaPlus
+} from 'react-icons/fa';
+import { fetchAdminBlogs, fetchAdminClients, fetchAdminProjects, fetchAdminPayments } from '../../utils/api.js';
 
 const Dashboard = () => {
-  const [blogs, setBlogs] = useState([]);
+  const [stats, setStats] = useState({
+    blogs: 0,
+    clients: 0,
+    projects: 0,
+    payments: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -15,14 +24,25 @@ const Dashboard = () => {
       navigate('/cms/login');
       return;
     }
-    fetchBlogs();
+    fetchStats();
   }, [navigate]);
 
-  const fetchBlogs = async () => {
+  const fetchStats = async () => {
     try {
       const token = localStorage.getItem('cms_token');
-      const data = await fetchAdminBlogs(token);
-      setBlogs(data);
+      const [blogs, clients, projects, payments] = await Promise.all([
+        fetchAdminBlogs(token).catch(() => []),
+        fetchAdminClients(token).catch(() => []),
+        fetchAdminProjects(token).catch(() => []),
+        fetchAdminPayments(token).catch(() => [])
+      ]);
+      
+      setStats({
+        blogs: blogs.length || 0,
+        clients: clients.length || 0,
+        projects: projects.length || 0,
+        payments: payments.length || 0
+      });
     } catch (error) {
       if (error.message.includes('401') || error.message.includes('Token')) {
         localStorage.removeItem('cms_token');
@@ -30,23 +50,9 @@ const Dashboard = () => {
         navigate('/cms/login');
         return;
       }
-      setError('Failed to fetch blogs');
+      setError('Failed to fetch statistics');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this blog post?')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('cms_token');
-      await deleteAdminBlog(id, token);
-      setBlogs(blogs.filter(blog => blog.id !== id));
-    } catch (error) {
-      alert('Error deleting blog post: ' + error.message);
     }
   };
 
@@ -64,14 +70,24 @@ const Dashboard = () => {
     );
   }
 
+  const menuItems = [
+    { icon: FaUsers, title: 'Clients', path: '/cms/clients', color: 'from-blue-500 to-blue-600', description: 'Manage all clients' },
+    { icon: FaProjectDiagram, title: 'Projects', path: '/cms/projects', color: 'from-purple-500 to-purple-600', description: 'Manage projects & descriptions' },
+    { icon: FaTasks, title: 'Milestones', path: '/cms/milestones', color: 'from-green-500 to-green-600', description: 'Track project milestones' },
+    { icon: FaDollarSign, title: 'Payments', path: '/cms/payments', color: 'from-yellow-500 to-yellow-600', description: 'Manage payments & invoices' },
+    { icon: FaFolderOpen, title: 'Portfolios', path: '/cms/portfolios', color: 'from-pink-500 to-pink-600', description: 'Manage portfolio items' },
+    { icon: FaFileAlt, title: 'Blogs', path: '/cms/blogs', color: 'from-indigo-500 to-indigo-600', description: 'Manage blog posts' },
+    { icon: FaEnvelope, title: 'Contact', path: '/cms/contact', color: 'from-teal-500 to-teal-600', description: 'View contact submissions' },
+  ];
+
   return (
     <div className="min-h-screen bg-primary">
       {/* Header */}
       <header className="bg-surface border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <FaFileAlt className="text-accent text-2xl" />
-            <h1 className="text-2xl font-bold text-white">CMS Dashboard</h1>
+            <FaChartLine className="text-accent text-2xl" />
+            <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
           </div>
           <button
             onClick={handleLogout}
@@ -84,102 +100,112 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-white">Blog Posts</h2>
-          <div className="flex gap-3">
-            <Link
-              to="/cms/contact"
-              className="flex items-center gap-2 px-4 py-2 bg-surface border border-white/20 text-white rounded-lg hover:bg-secondary transition"
-            >
-              <FaEnvelope /> Contact Submissions
-            </Link>
-            <Link
-              to="/cms/blogs/new"
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-accent to-accent2 text-white font-bold rounded-lg hover:opacity-90 transition"
-            >
-              <FaPlus /> New Blog Post
-            </Link>
-          </div>
-        </div>
-
         {error && (
           <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-6">
             <p className="text-red-300">{error}</p>
           </div>
         )}
 
-        {/* Blog Posts Table */}
-        <div className="bg-surface rounded-xl overflow-hidden border border-white/10">
-          <table className="w-full">
-            <thead className="bg-secondary/50">
-              <tr>
-                <th className="px-6 py-4 text-left text-white font-semibold">Title</th>
-                <th className="px-6 py-4 text-left text-white font-semibold">Category</th>
-                <th className="px-6 py-4 text-left text-white font-semibold">Status</th>
-                <th className="px-6 py-4 text-left text-white font-semibold">Date</th>
-                <th className="px-6 py-4 text-right text-white font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {blogs.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-white/70">
-                    No blog posts found. Create your first blog post!
-                  </td>
-                </tr>
-              ) : (
-                blogs.map((blog) => (
-                  <tr key={blog.id} className="border-t border-white/10 hover:bg-secondary/20 transition">
-                    <td className="px-6 py-4">
-                      <div className="text-white font-medium">{blog.title}</div>
-                      {blog.featured && (
-                        <span className="text-xs text-accent">⭐ Featured</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-white/70">{blog.category || '-'}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        blog.published
-                          ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                          : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-                      }`}>
-                        {blog.published ? 'Published' : 'Draft'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-white/70">
-                      {new Date(blog.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        <Link
-                          to={`/blog/${blog.slug}`}
-                          target="_blank"
-                          className="p-2 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-300 hover:bg-blue-500/30 transition"
-                          title="View"
-                        >
-                          <FaEye />
-                        </Link>
-                        <Link
-                          to={`/cms/blogs/edit/${blog.id}`}
-                          className="p-2 bg-accent/20 border border-accent/30 rounded-lg text-accent hover:bg-accent/30 transition"
-                          title="Edit"
-                        >
-                          <FaEdit />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(blog.id)}
-                          className="p-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 hover:bg-red-500/30 transition"
-                          title="Delete"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-surface rounded-xl p-6 border border-white/10">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/70 text-sm mb-1">Total Clients</p>
+                <p className="text-3xl font-bold text-white">{stats.clients}</p>
+              </div>
+              <div className="bg-blue-500/20 p-3 rounded-lg">
+                <FaUsers className="text-blue-400 text-2xl" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-surface rounded-xl p-6 border border-white/10">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/70 text-sm mb-1">Active Projects</p>
+                <p className="text-3xl font-bold text-white">{stats.projects}</p>
+              </div>
+              <div className="bg-purple-500/20 p-3 rounded-lg">
+                <FaProjectDiagram className="text-purple-400 text-2xl" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-surface rounded-xl p-6 border border-white/10">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/70 text-sm mb-1">Blog Posts</p>
+                <p className="text-3xl font-bold text-white">{stats.blogs}</p>
+              </div>
+              <div className="bg-indigo-500/20 p-3 rounded-lg">
+                <FaFileAlt className="text-indigo-400 text-2xl" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-surface rounded-xl p-6 border border-white/10">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/70 text-sm mb-1">Payments</p>
+                <p className="text-3xl font-bold text-white">{stats.payments}</p>
+              </div>
+              <div className="bg-yellow-500/20 p-3 rounded-lg">
+                <FaDollarSign className="text-yellow-400 text-2xl" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Management Sections */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-6">Management Sections</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {menuItems.map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={index}
+                  to={item.path}
+                  className="bg-surface rounded-xl p-6 border border-white/10 hover:border-accent/50 transition-all group"
+                >
+                  <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${item.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                    <Icon className="text-white text-xl" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
+                  <p className="text-white/70 text-sm">{item.description}</p>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-surface rounded-xl p-6 border border-white/10">
+          <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              to="/cms/clients/new"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-300 hover:bg-blue-500/30 transition"
+            >
+              <FaPlus /> New Client
+            </Link>
+            <Link
+              to="/cms/projects/new"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-300 hover:bg-purple-500/30 transition"
+            >
+              <FaPlus /> New Project
+            </Link>
+            <Link
+              to="/cms/blogs/new"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-500/20 border border-indigo-500/30 rounded-lg text-indigo-300 hover:bg-indigo-500/30 transition"
+            >
+              <FaPlus /> New Blog Post
+            </Link>
+            <Link
+              to="/cms/portfolios/new"
+              className="flex items-center gap-2 px-4 py-2 bg-pink-500/20 border border-pink-500/30 rounded-lg text-pink-300 hover:bg-pink-500/30 transition"
+            >
+              <FaPlus /> New Portfolio
+            </Link>
+          </div>
         </div>
       </main>
     </div>

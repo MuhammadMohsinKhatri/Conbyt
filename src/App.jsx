@@ -12,7 +12,13 @@ import TermsOfService from "./pages/TermsOfService";
 import CMSLogin from "./pages/CMS/Login";
 import CMSDashboard from "./pages/CMS/Dashboard";
 import BlogEditor from "./pages/CMS/BlogEditor";
+import Blogs from "./pages/CMS/Blogs";
 import ContactSubmissions from "./pages/CMS/ContactSubmissions";
+import Clients from "./pages/CMS/Clients";
+import Projects from "./pages/CMS/Projects";
+import Milestones from "./pages/CMS/Milestones";
+import Payments from "./pages/CMS/Payments";
+import Portfolios from "./pages/CMS/Portfolios";
 
 
 function App() {
@@ -32,9 +38,18 @@ function App() {
             {/* CMS Routes */}
             <Route path="/cms/login" element={<CMSLogin />} />
             <Route path="/cms/dashboard" element={<CMSDashboard />} />
+            <Route path="/cms/blogs" element={<Blogs />} />
             <Route path="/cms/blogs/new" element={<BlogEditor />} />
             <Route path="/cms/blogs/edit/:id" element={<BlogEditor />} />
             <Route path="/cms/contact" element={<ContactSubmissions />} />
+            <Route path="/cms/clients" element={<Clients />} />
+            <Route path="/cms/clients/new" element={<Clients />} />
+            <Route path="/cms/projects" element={<Projects />} />
+            <Route path="/cms/projects/new" element={<Projects />} />
+            <Route path="/cms/milestones" element={<Milestones />} />
+            <Route path="/cms/payments" element={<Payments />} />
+            <Route path="/cms/portfolios" element={<Portfolios />} />
+            <Route path="/cms/portfolios/new" element={<Portfolios />} />
           </Routes>
         </main>
         <Footer />

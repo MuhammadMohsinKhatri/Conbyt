@@ -184,3 +184,333 @@ export const deleteAdminContact = async (id, token) => {
   return response.json();
 };
 
+// Clients API functions
+export const fetchAdminClients = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/clients`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch clients');
+  return response.json();
+};
+
+export const fetchAdminClient = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/clients/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch client');
+  return response.json();
+};
+
+export const createAdminClient = async (clientData, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/clients`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(clientData)
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create client');
+  }
+  return response.json();
+};
+
+export const updateAdminClient = async (id, clientData, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/clients/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(clientData)
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update client');
+  }
+  return response.json();
+};
+
+export const deleteAdminClient = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/clients/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to delete client');
+  return response.json();
+};
+
+// Projects API functions
+export const fetchAdminProjects = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/projects`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch projects');
+  return response.json();
+};
+
+export const fetchAdminProject = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/projects/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch project');
+  return response.json();
+};
+
+export const createAdminProject = async (projectData, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/projects`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(projectData)
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create project');
+  }
+  return response.json();
+};
+
+export const updateAdminProject = async (id, projectData, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/projects/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(projectData)
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update project');
+  }
+  return response.json();
+};
+
+export const deleteAdminProject = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/projects/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to delete project');
+  return response.json();
+};
+
+// Milestones API functions
+export const fetchAdminMilestones = async (projectId, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/milestones/project/${projectId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch milestones');
+  return response.json();
+};
+
+export const fetchAdminMilestone = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/milestones/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch milestone');
+  return response.json();
+};
+
+export const createAdminMilestone = async (milestoneData, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/milestones`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(milestoneData)
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create milestone');
+  }
+  return response.json();
+};
+
+export const updateAdminMilestone = async (id, milestoneData, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/milestones/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(milestoneData)
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update milestone');
+  }
+  return response.json();
+};
+
+export const deleteAdminMilestone = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/milestones/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to delete milestone');
+  return response.json();
+};
+
+// Payments API functions
+export const fetchAdminPayments = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/payments`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch payments');
+  return response.json();
+};
+
+export const fetchAdminProjectPayments = async (projectId, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/payments/project/${projectId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch project payments');
+  return response.json();
+};
+
+export const fetchAdminPayment = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/payments/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch payment');
+  return response.json();
+};
+
+export const createAdminPayment = async (paymentData, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/payments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(paymentData)
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create payment');
+  }
+  return response.json();
+};
+
+export const updateAdminPayment = async (id, paymentData, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/payments/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(paymentData)
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update payment');
+  }
+  return response.json();
+};
+
+export const deleteAdminPayment = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/payments/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to delete payment');
+  return response.json();
+};
+
+// Portfolios API functions
+export const fetchAdminPortfolios = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/portfolios`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch portfolios');
+  return response.json();
+};
+
+export const fetchAdminPortfolio = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/portfolios/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch portfolio');
+  return response.json();
+};
+
+export const createAdminPortfolio = async (portfolioData, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/portfolios`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(portfolioData)
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create portfolio');
+  }
+  return response.json();
+};
+
+export const updateAdminPortfolio = async (id, portfolioData, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/portfolios/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(portfolioData)
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update portfolio');
+  }
+  return response.json();
+};
+
+export const deleteAdminPortfolio = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/portfolios/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to delete portfolio');
+  return response.json();
+};
+

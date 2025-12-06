@@ -10,7 +10,8 @@
     "test-db": "node scripts/test-connection.js",
     "hash-password": "node scripts/hash-password.js",
     "verify-user": "node scripts/verify-user.js",
-    "create-admin": "node scripts/create-admin.js"
+    "create-admin": "node scripts/create-admin.js",
+    "migrate": "node scripts/migrate.js"
   },
   "dependencies": {
     "express": "^4.18.2",

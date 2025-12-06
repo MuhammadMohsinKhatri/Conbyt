@@ -13,6 +13,11 @@ import contactRoutes from './routes/contact.js';
 import adminAuthRoutes from './routes/admin/auth.js';
 import adminBlogsRoutes from './routes/admin/blogs.js';
 import adminContactRoutes from './routes/admin/contact.js';
+import adminClientsRoutes from './routes/admin/clients.js';
+import adminProjectsRoutes from './routes/admin/projects.js';
+import adminMilestonesRoutes from './routes/admin/milestones.js';
+import adminPaymentsRoutes from './routes/admin/payments.js';
+import adminPortfoliosRoutes from './routes/admin/portfolios.js';
 
 dotenv.config();
 
@@ -50,6 +55,11 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/blogs', adminBlogsRoutes);
 app.use('/api/admin/contact', adminContactRoutes);
+app.use('/api/admin/clients', adminClientsRoutes);
+app.use('/api/admin/projects', adminProjectsRoutes);
+app.use('/api/admin/milestones', adminMilestonesRoutes);
+app.use('/api/admin/payments', adminPaymentsRoutes);
+app.use('/api/admin/portfolios', adminPortfoliosRoutes);
 
 // Root API endpoint
 app.get('/api', (req, res) => {

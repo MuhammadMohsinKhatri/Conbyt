@@ -113,3 +113,103 @@ CREATE TABLE IF NOT EXISTS contact_submissions (
   INDEX idx_created_at (created_at)
 );
 
+-- Clients Table
+CREATE TABLE IF NOT EXISTS clients (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255),
+  phone VARCHAR(50),
+  company VARCHAR(255),
+  address TEXT,
+  notes TEXT,
+  status ENUM('active', 'inactive', 'archived') DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_email (email),
+  INDEX idx_status (status),
+  INDEX idx_company (company)
+);
+
+-- Projects Table
+CREATE TABLE IF NOT EXISTS projects (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  client_id INT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  status ENUM('planning', 'in_progress', 'on_hold', 'completed', 'cancelled') DEFAULT 'planning',
+  start_date DATE,
+  end_date DATE,
+  budget DECIMAL(15, 2),
+  tech_stack JSON,
+  category VARCHAR(100),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
+  INDEX idx_client_id (client_id),
+  INDEX idx_status (status),
+  INDEX idx_category (category)
+);
+
+-- Milestones Table
+CREATE TABLE IF NOT EXISTS milestones (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  project_id INT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  status ENUM('pending', 'in_progress', 'completed', 'cancelled') DEFAULT 'pending',
+  due_date DATE,
+  completed_date DATE,
+  order_index INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  INDEX idx_project_id (project_id),
+  INDEX idx_status (status),
+  INDEX idx_due_date (due_date)
+);
+
+-- Payments Table
+CREATE TABLE IF NOT EXISTS payments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  project_id INT NOT NULL,
+  milestone_id INT,
+  amount DECIMAL(15, 2) NOT NULL,
+  payment_date DATE,
+  payment_method VARCHAR(50),
+  status ENUM('pending', 'completed', 'failed', 'refunded') DEFAULT 'pending',
+  invoice_number VARCHAR(100),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  FOREIGN KEY (milestone_id) REFERENCES milestones(id) ON DELETE SET NULL,
+  INDEX idx_project_id (project_id),
+  INDEX idx_milestone_id (milestone_id),
+  INDEX idx_status (status),
+  INDEX idx_payment_date (payment_date)
+);
+
+-- Portfolios Table
+CREATE TABLE IF NOT EXISTS portfolios (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  project_id INT,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  image_url VARCHAR(500),
+  category VARCHAR(100),
+  tech_stack JSON,
+  slug VARCHAR(255) UNIQUE,
+  featured BOOLEAN DEFAULT FALSE,
+  display_order INT DEFAULT 0,
+  live_url VARCHAR(500),
+  github_url VARCHAR(500),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,
+  INDEX idx_project_id (project_id),
+  INDEX idx_slug (slug),
+  INDEX idx_category (category),
+  INDEX idx_featured (featured),
+  INDEX idx_display_order (display_order)
+);
+
