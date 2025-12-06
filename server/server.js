@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import caseStudiesRoutes from './routes/caseStudies.js';
 import blogsRoutes from './routes/blogs.js';
 import testimonialsRoutes from './routes/testimonials.js';
@@ -80,16 +81,86 @@ app.get('/api/health', (req, res) => {
 // Serve static files from React app (production)
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '..', 'dist');
-  app.use(express.static(distPath));
   
-  // Handle React routing, return all requests to React app
+  // Check if dist folder exists
+  if (!fs.existsSync(distPath)) {
+    console.error(`❌ ERROR: dist folder not found at ${distPath}`);
+    console.error(`Current working directory: ${process.cwd()}`);
+    console.error(`__dirname: ${__dirname}`);
+    console.error(`NODE_ENV: ${process.env.NODE_ENV}`);
+  } else {
+    console.log(`✅ Serving static files from: ${distPath}`);
+    try {
+      const files = fs.readdirSync(distPath);
+      console.log(`📁 Files in dist: ${files.join(', ')}`);
+      
+      // Check if index.html exists
+      const indexPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        console.log(`✅ index.html found at: ${indexPath}`);
+      } else {
+        console.error(`❌ index.html NOT found at: ${indexPath}`);
+      }
+    } catch (err) {
+      console.error(`❌ Error reading dist folder:`, err);
+    }
+  }
+  
+  // Serve static files (CSS, JS, images, etc.)
+  app.use(express.static(distPath, {
+    index: false, // Don't serve index.html automatically, we'll handle it
+    extensions: ['html', 'htm']
+  }));
+  
+  // Serve index.html for root path
+  app.get('/', (req, res) => {
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.error(`❌ index.html not found at ${indexPath}`);
+      res.status(404).send(`
+        <html>
+          <body>
+            <h1>404 - File Not Found</h1>
+            <p>index.html not found at: ${indexPath}</p>
+            <p>Dist path: ${distPath}</p>
+            <p>Current dir: ${process.cwd()}</p>
+            <p>NODE_ENV: ${process.env.NODE_ENV}</p>
+          </body>
+        </html>
+      `);
+    }
+  });
+  
+  // Handle React routing - return all non-API requests to React app
   app.get('*', (req, res) => {
     // Don't serve index.html for API routes
     if (req.path.startsWith('/api')) {
       return res.status(404).json({ error: 'API endpoint not found' });
     }
-    res.sendFile(path.join(distPath, 'index.html'));
+    
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.error(`❌ index.html not found at ${indexPath} for path: ${req.path}`);
+      res.status(404).send(`
+        <html>
+          <body>
+            <h1>404 - File Not Found</h1>
+            <p>index.html not found at: ${indexPath}</p>
+            <p>Requested path: ${req.path}</p>
+            <p>Dist path: ${distPath}</p>
+            <p>Current dir: ${process.cwd()}</p>
+          </body>
+        </html>
+      `);
+    }
   });
+} else {
+  console.log('⚠️  NODE_ENV is not "production", static files will not be served');
+  console.log(`Current NODE_ENV: ${process.env.NODE_ENV}`);
 }
 
 // Error handling middleware
