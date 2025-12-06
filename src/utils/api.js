@@ -14,6 +14,15 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+// Debug logging (remove in production if needed)
+if (typeof window !== 'undefined') {
+  console.log('🔍 API Configuration:', {
+    baseUrl: API_BASE_URL,
+    isProduction: import.meta.env.PROD,
+    viteApiUrl: import.meta.env.VITE_API_URL
+  });
+}
+
 export const fetchBlogs = async () => {
   const response = await fetch(`${API_BASE_URL}/blogs`);
   if (!response.ok) throw new Error('Failed to fetch blogs');
@@ -52,18 +61,33 @@ export const fetchStats = async () => {
 
 // Admin API functions
 export const adminLogin = async (username, password) => {
-  const response = await fetch(`${API_BASE_URL}/admin/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ username, password })
-  });
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Login failed');
+  const url = `${API_BASE_URL}/admin/auth/login`;
+  console.log('🔍 Attempting login to:', url);
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username, password })
+    });
+    
+    console.log('🔍 Login response status:', response.status);
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Network error' }));
+      console.error('🔍 Login error:', error);
+      throw new Error(error.error || 'Login failed');
+    }
+    
+    const data = await response.json();
+    console.log('✅ Login successful');
+    return data;
+  } catch (error) {
+    console.error('🔍 Login fetch error:', error);
+    throw error;
   }
-  return response.json();
 };
 
 export const adminVerify = async (token) => {
