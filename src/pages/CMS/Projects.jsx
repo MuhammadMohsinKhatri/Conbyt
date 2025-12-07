@@ -1,15 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaProjectDiagram, FaArrowLeft } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaProjectDiagram, FaArrowLeft, FaSearch, FaDownload, FaFileCsv, FaFileExcel, FaFilter } from 'react-icons/fa';
 import { fetchAdminProjects, fetchAdminClients, deleteAdminProject, createAdminProject, updateAdminProject } from '../../utils/api.js';
+import { filterData, downloadCSV, downloadExcel } from '../../utils/exportUtils.js';
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
+  const [allProjects, setAllProjects] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    status: '',
+    category: '',
+    client_id: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
   const [formData, setFormData] = useState({
     client_id: '',
     title: '',
@@ -40,6 +49,7 @@ const Projects = () => {
         fetchAdminProjects(token),
         fetchAdminClients(token)
       ]);
+      setAllProjects(projectsData);
       setProjects(projectsData);
       setClients(clientsData);
     } catch (error) {
@@ -53,6 +63,61 @@ const Projects = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Filter projects based on search and filters
+  const filteredProjects = useMemo(() => {
+    return filterData(
+      allProjects,
+      searchTerm,
+      ['title', 'description', 'category', 'client_name', 'client_company'],
+      filters
+    );
+  }, [allProjects, searchTerm, filters]);
+
+  // Update displayed projects when filters change
+  useEffect(() => {
+    setProjects(filteredProjects);
+  }, [filteredProjects]);
+
+  const handleExportCSV = () => {
+    const headers = [
+      { label: 'ID', key: 'id' },
+      { label: 'Title', key: 'title' },
+      { label: 'Client', key: 'client_name' },
+      { label: 'Status', key: 'status' },
+      { label: 'Budget', key: 'budget' },
+      { label: 'Category', key: 'category' },
+      { label: 'Start Date', key: 'start_date' },
+      { label: 'End Date', key: 'end_date' }
+    ];
+    downloadCSV(filteredProjects, headers, `projects_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const handleExportExcel = () => {
+    const headers = [
+      { label: 'ID', key: 'id' },
+      { label: 'Title', key: 'title' },
+      { label: 'Client', key: 'client_name' },
+      { label: 'Status', key: 'status' },
+      { label: 'Budget', key: 'budget' },
+      { label: 'Category', key: 'category' },
+      { label: 'Start Date', key: 'start_date' },
+      { label: 'End Date', key: 'end_date' }
+    ];
+    downloadExcel(filteredProjects, headers, `projects_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilters({ status: '', category: '', client_id: '' });
   };
 
   const handleDelete = async (id) => {
@@ -208,79 +273,194 @@ const Projects = () => {
           </div>
         )}
 
+        {/* Search and Filter Section */}
+        <div className="bg-surface rounded-xl border border-white/10 p-4 sm:p-6 mb-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search Bar */}
+            <div className="flex-1 relative">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
+              <input
+                type="text"
+                placeholder="Search by title, description, category, client..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-secondary border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-accent"
+              />
+            </div>
+
+            {/* Filter Toggle and Export Buttons */}
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                  showFilters || Object.values(filters).some(f => f) || searchTerm
+                    ? 'bg-accent/20 border border-accent/30 text-accent'
+                    : 'bg-secondary/50 border border-white/20 text-white/70 hover:bg-white/5'
+                }`}
+              >
+                <FaFilter /> Filters
+              </button>
+              <div className="relative group">
+                <button className="flex items-center gap-2 px-4 py-2 bg-secondary/50 border border-white/20 rounded-lg text-white/70 hover:bg-white/5 transition">
+                  <FaDownload /> Export
+                </button>
+                <div className="absolute right-0 mt-2 w-48 bg-surface border border-white/10 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                  <button
+                    onClick={handleExportCSV}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-white/70 hover:bg-white/5 rounded-t-lg transition"
+                  >
+                    <FaFileCsv className="text-green-400" /> Export as CSV
+                  </button>
+                  <button
+                    onClick={handleExportExcel}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-white/70 hover:bg-white/5 rounded-b-lg transition"
+                  >
+                    <FaFileExcel className="text-green-400" /> Export as Excel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Panel */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Status</label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white focus:outline-none focus:border-accent"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="planning">Planning</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="on_hold">On Hold</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Category</label>
+                <input
+                  type="text"
+                  placeholder="Filter by category"
+                  value={filters.category}
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
+                  className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-accent"
+                />
+              </div>
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Client</label>
+                <select
+                  value={filters.client_id}
+                  onChange={(e) => handleFilterChange('client_id', e.target.value)}
+                  className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white focus:outline-none focus:border-accent"
+                >
+                  <option value="">All Clients</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {(searchTerm || Object.values(filters).some(f => f)) && (
+                <div className="flex items-end">
+                  <button
+                    onClick={clearFilters}
+                    className="w-full px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 hover:bg-red-500/30 transition"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Results Count */}
+          <div className="mt-4 text-white/50 text-sm">
+            Showing {filteredProjects.length} of {allProjects.length} projects
+          </div>
+        </div>
+
         <div className="bg-surface rounded-xl overflow-hidden border border-white/10">
-          <table className="w-full">
-            <thead className="bg-secondary/50">
-              <tr>
-                <th className="px-6 py-4 text-left text-white font-semibold">Title</th>
-                <th className="px-6 py-4 text-left text-white font-semibold">Client</th>
-                <th className="px-6 py-4 text-left text-white font-semibold">Status</th>
-                <th className="px-6 py-4 text-left text-white font-semibold">Budget</th>
-                <th className="px-6 py-4 text-left text-white font-semibold">Category</th>
-                <th className="px-6 py-4 text-right text-white font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projects.length === 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px]">
+              <thead className="bg-secondary/50">
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-white/70">
-                    No projects found. Create your first project!
-                  </td>
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-white font-semibold text-sm sm:text-base">Title</th>
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-white font-semibold text-sm sm:text-base">Client</th>
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-white font-semibold text-sm sm:text-base">Status</th>
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-white font-semibold text-sm sm:text-base">Budget</th>
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-white font-semibold text-sm sm:text-base">Category</th>
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-semibold text-sm sm:text-base">Actions</th>
                 </tr>
-              ) : (
-                projects.map((project) => (
-                  <tr key={project.id} className="border-t border-white/10 hover:bg-secondary/20 transition">
-                    <td className="px-6 py-4">
-                      <div className="text-white font-medium">{project.title}</div>
-                      {project.description && (
-                        <div className="text-white/60 text-sm mt-1 line-clamp-1">
-                          {project.description.substring(0, 50)}...
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-white/70">
-                      {project.client_name || project.client_company || '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        project.status === 'completed'
-                          ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                          : project.status === 'in_progress'
-                          ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                          : project.status === 'on_hold'
-                          ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-                          : 'bg-gray-500/20 text-gray-300 border border-gray-500/30'
-                      }`}>
-                        {project.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-white/70">
-                      {project.budget ? `$${parseFloat(project.budget).toLocaleString()}` : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-white/70">{project.category || '-'}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(project)}
-                          className="p-2 bg-accent/20 border border-accent/30 rounded-lg text-accent hover:bg-accent/30 transition"
-                          title="Edit"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(project.id)}
-                          className="p-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 hover:bg-red-500/30 transition"
-                          title="Delete"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {filteredProjects.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-12 text-center text-white/70">
+                      {searchTerm || Object.values(filters).some(f => f) 
+                        ? 'No projects match your search criteria.' 
+                        : 'No projects found. Create your first project!'}
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredProjects.map((project) => (
+                    <tr key={project.id} className="border-t border-white/10 hover:bg-secondary/20 transition">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <div className="text-white font-medium text-sm sm:text-base">{project.title}</div>
+                        {project.description && (
+                          <div className="text-white/60 text-xs sm:text-sm mt-1 line-clamp-1">
+                            {project.description.substring(0, 50)}...
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-white/70 text-sm sm:text-base">
+                        {project.client_name || project.client_company || '-'}
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${
+                          project.status === 'completed'
+                            ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                            : project.status === 'in_progress'
+                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                            : project.status === 'on_hold'
+                            ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
+                            : 'bg-gray-500/20 text-gray-300 border border-gray-500/30'
+                        }`}>
+                          {project.status.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-white/70 text-sm sm:text-base">
+                        {project.budget ? `$${parseFloat(project.budget).toLocaleString()}` : '-'}
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-white/70 text-sm sm:text-base">{project.category || '-'}</td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <div className="flex justify-end gap-1 sm:gap-2">
+                          <button
+                            onClick={() => handleEdit(project)}
+                            className="p-1.5 sm:p-2 bg-accent/20 border border-accent/30 rounded-lg text-accent hover:bg-accent/30 transition"
+                            title="Edit"
+                          >
+                            <FaEdit className="text-sm sm:text-base" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(project.id)}
+                            className="p-1.5 sm:p-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 hover:bg-red-500/30 transition"
+                            title="Delete"
+                          >
+                            <FaTrash className="text-sm sm:text-base" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </main>
 
