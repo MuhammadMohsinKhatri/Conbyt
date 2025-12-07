@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaFolderOpen, FaArrowLeft } from 'react-icons/fa';
+import ImageUpload from '../../components/CMS/ImageUpload';
 import { fetchAdminPortfolios, fetchAdminProjects, deleteAdminPortfolio, createAdminPortfolio, updateAdminPortfolio } from '../../utils/api.js';
 
 const Portfolios = () => {
@@ -332,26 +333,22 @@ const Portfolios = () => {
                   rows="4"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-white/70 mb-2">Image URL</label>
-                  <input
-                    type="url"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white focus:outline-none focus:border-accent"
-                    placeholder="https://..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-white/70 mb-2">Category</label>
-                  <input
-                    type="text"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white focus:outline-none focus:border-accent"
-                  />
-                </div>
+              <div>
+                <ImageUpload
+                  label="Portfolio Image"
+                  value={formData.image_url}
+                  onChange={(value) => setFormData({ ...formData, image_url: value })}
+                  placeholder="Upload portfolio image or paste URL"
+                />
+              </div>
+              <div>
+                <label className="block text-white/70 mb-2">Category</label>
+                <input
+                  type="text"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white focus:outline-none focus:border-accent"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

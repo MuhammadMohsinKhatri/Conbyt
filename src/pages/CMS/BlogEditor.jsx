@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaSave, FaTimes, FaEye, FaImage } from 'react-icons/fa';
 import SEOPlugin from '../../components/SEO/SEOPlugin';
+import ImageUpload from '../../components/CMS/ImageUpload';
 import { fetchAdminBlog, createAdminBlog, updateAdminBlog } from '../../utils/api.js';
 
 const BlogEditor = () => {
@@ -257,18 +258,13 @@ const BlogEditor = () => {
           <div className="bg-surface rounded-xl p-6 border border-white/10">
             <h2 className="text-xl font-bold text-white mb-4">Media</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-white mb-2 font-medium">Featured Image URL</label>
-                <input
-                  type="url"
-                  name="image_url"
-                  value={formData.image_url}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-primary/80 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-accent"
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ImageUpload
+                label="Featured Image"
+                value={formData.image_url}
+                onChange={(value) => setFormData({ ...formData, image_url: value })}
+                placeholder="Upload featured image or paste URL"
+              />
 
               <div>
                 <label className="block text-white mb-2 font-medium">Author Name</label>
@@ -282,17 +278,12 @@ const BlogEditor = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-white mb-2 font-medium">Author Avatar URL</label>
-                <input
-                  type="url"
-                  name="author_avatar"
-                  value={formData.author_avatar}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-primary/80 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-accent"
-                  placeholder="https://example.com/avatar.jpg"
-                />
-              </div>
+              <ImageUpload
+                label="Author Avatar"
+                value={formData.author_avatar}
+                onChange={(value) => setFormData({ ...formData, author_avatar: value })}
+                placeholder="Upload author avatar or paste URL"
+              />
             </div>
           </div>
 
@@ -349,18 +340,12 @@ const BlogEditor = () => {
                 <p className="text-white/50 text-xs mt-1">Comma-separated keywords</p>
               </div>
 
-              <div>
-                <label className="block text-white mb-2 font-medium">OG Image URL</label>
-                <input
-                  type="url"
-                  name="og_image"
-                  value={formData.og_image}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-primary/80 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-accent"
-                  placeholder="https://example.com/og-image.jpg"
-                />
-                <p className="text-white/50 text-xs mt-1">Image for social media sharing (1200x630px recommended)</p>
-              </div>
+              <ImageUpload
+                label="OG Image (Social Media)"
+                value={formData.og_image}
+                onChange={(value) => setFormData({ ...formData, og_image: value })}
+                placeholder="Upload OG image or paste URL (1200x630px recommended)"
+              />
 
               <div>
                 <label className="block text-white mb-2 font-medium">Canonical URL</label>
