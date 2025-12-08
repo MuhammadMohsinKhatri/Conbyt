@@ -41,16 +41,6 @@ const SEORecommendations = ({ analysis, focusKeyword }) => {
     });
   }
 
-  // Keyword density
-  if (focusKeyword && !analysis.keywordDensity) {
-    recommendations.push({
-      type: 'warning',
-      icon: FaExclamationTriangle,
-      text: 'Optimize keyword density (aim for 0.5-2.5%)',
-      priority: 'medium'
-    });
-  }
-
   // Headings
   if (!analysis.headings) {
     recommendations.push({
@@ -109,6 +99,22 @@ const SEORecommendations = ({ analysis, focusKeyword }) => {
       priority: 'success'
     });
   }
+
+  if (focusKeyword && (!analysis.keywordInTitle || !analysis.keywordInMeta || !analysis.keywordInHeading || !analysis.keywordInIntro)) {
+    recommendations.push({
+      type: 'warning',
+      icon: FaExclamationTriangle,
+      text: 'Ensure your focus keyword appears naturally in title, meta description, at least one heading, and in the introduction.',
+      priority: 'high',
+    });
+  }
+
+  recommendations.push({
+    type: 'info',
+    icon: FaLightbulb,
+    text: 'For best results, use related or semantic keywords in your article naturally, covering the topic in depth. Don\'t overuse your primary keyword.',
+    priority: 'medium',
+  });
 
   const getIconColor = (type) => {
     switch (type) {

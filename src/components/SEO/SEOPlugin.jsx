@@ -19,7 +19,7 @@ const SEOPlugin = ({ formData, onUpdate }) => {
   }, [formData, focusKeyword]);
 
   const calculateSEOScore = () => {
-    let score = 0;
+    const positions = analyzeKeywordPositions();
     const checks = {
       title: formData.title && formData.title.length >= 30 && formData.title.length <= 60,
       metaTitle: formData.meta_title && formData.meta_title.length >= 30 && formData.meta_title.length <= 60,
@@ -28,10 +28,10 @@ const SEOPlugin = ({ formData, onUpdate }) => {
       content: formData.content && formData.content.length >= 300,
       image: formData.image_url && formData.image_url.length > 0,
       focusKeyword: focusKeyword && focusKeyword.length > 0,
-      keywordInTitle: focusKeyword && formData.title && formData.title.toLowerCase().includes(focusKeyword.toLowerCase()),
-      keywordInMeta: focusKeyword && formData.meta_title && formData.meta_title.toLowerCase().includes(focusKeyword.toLowerCase()),
-      keywordInContent: focusKeyword && formData.content && formData.content.toLowerCase().includes(focusKeyword.toLowerCase()),
-      keywordDensity: calculateKeywordDensity(),
+      keywordInTitle: positions.keywordInTitle,
+      keywordInMeta: positions.keywordInMeta,
+      keywordInHeading: positions.keywordInHeading,
+      keywordInIntro: positions.keywordInIntro,
       headings: checkHeadings(),
       internalLinks: checkInternalLinks(),
       externalLinks: checkExternalLinks(),
@@ -55,12 +55,19 @@ const SEOPlugin = ({ formData, onUpdate }) => {
     // Additional analysis will be performed here
   };
 
-  const calculateKeywordDensity = () => {
-    if (!focusKeyword || !formData.content) return false;
-    const words = formData.content.toLowerCase().split(/\s+/);
-    const keywordCount = words.filter(word => word === focusKeyword.toLowerCase()).length;
-    const density = (keywordCount / words.length) * 100;
-    return density >= 0.5 && density <= 2.5; // Optimal keyword density
+  const analyzeKeywordPositions = () => {
+    const keyword = focusKeyword && focusKeyword.toLowerCase();
+    const getText = str => (str || '').toLowerCase();
+    const firstParagraph = formData.content ? getText(formData.content.split(/\n/)[0] || '') : '';
+    // Only matches heading tags in HTML, basic level
+    const headingMatch = /<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi;
+    const headings = formData.content ? [...(formData.content.match(headingMatch) || [])].join(' ').toLowerCase() : '';
+    return {
+      keywordInTitle: keyword && formData.title && getText(formData.title).includes(keyword),
+      keywordInMeta: keyword && formData.meta_description && getText(formData.meta_description).includes(keyword),
+      keywordInHeading: keyword && headings.includes(keyword),
+      keywordInIntro: keyword && firstParagraph.includes(keyword),
+    };
   };
 
   const checkHeadings = () => {
@@ -393,23 +400,22 @@ const SEOPlugin = ({ formData, onUpdate }) => {
           {focusKeyword && (
             <div className="bg-primary/40 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                {getStatusIcon(analysis.keywordDensity)}
-                <span className="text-white font-medium">Keyword Analysis</span>
+                {getStatusIcon(analysis.keywordInTitle)}
+                <span className="text-white font-medium">Keyword Use</span>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-white/60">Frequency: </span>
-                  <span className="text-white font-semibold">{getKeywordFrequency()}</span>
-                </div>
-                <div>
-                  <span className="text-white/60">Density: </span>
-                  <span className="text-white font-semibold">{getKeywordDensity()}%</span>
+                  <span className="text-white/60">Keyword Use: </span>
+                  <span className="text-white font-semibold">
+                    <span className={analysis.keywordInTitle ? 'text-green-400' : 'text-yellow-400'}>Title</span>,
+                    <span className={analysis.keywordInMeta ? 'text-green-400' : 'text-yellow-400'}>Meta</span>,
+                    <span className={analysis.keywordInHeading ? 'text-green-400' : 'text-yellow-400'}>Heading</span>,
+                    <span className={analysis.keywordInIntro ? 'text-green-400' : 'text-yellow-400'}>Intro</span>
+                  </span>
                 </div>
               </div>
               <p className="text-white/60 text-xs mt-2">
-                {analysis.keywordDensity
-                  ? '✓ Optimal keyword density (0.5-2.5%)'
-                  : '⚠ Adjust keyword density for better SEO'}
+                Make sure your focus keyword appears naturally in these important locations: title, meta description, at least one heading, and once in the first paragraph. Don't repeat unnecessarily or unnaturally.
               </p>
             </div>
           )}
