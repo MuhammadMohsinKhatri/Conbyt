@@ -45,7 +45,7 @@ const SEOPlugin = ({ formData, onUpdate }) => {
 
     const totalChecks = Object.keys(checks).length;
     const passedChecks = Object.values(checks).filter(Boolean).length;
-    score = Math.round((passedChecks / totalChecks) * 100);
+    const score = Math.round((passedChecks / totalChecks) * 100);
 
     setSeoScore(score);
     setAnalysis(checks);

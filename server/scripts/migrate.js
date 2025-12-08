@@ -9,6 +9,65 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Define columns that should exist in each table (for existing tables)
+const tableColumns = {
+  blog_posts: [
+    { name: 'image_url', type: 'VARCHAR(500)', after: 'content' },
+    { name: 'meta_title', type: 'VARCHAR(255)', after: 'slug' },
+    { name: 'meta_description', type: 'TEXT', after: 'meta_title' },
+    { name: 'meta_keywords', type: 'VARCHAR(500)', after: 'meta_description' },
+    { name: 'og_image', type: 'VARCHAR(500)', after: 'meta_keywords' },
+    { name: 'canonical_url', type: 'VARCHAR(500)', after: 'og_image' },
+    { name: 'published', type: 'BOOLEAN DEFAULT FALSE', after: 'canonical_url' },
+    { name: 'featured', type: 'BOOLEAN DEFAULT FALSE', after: 'published' },
+  ],
+};
+
+async function ensureTableColumns(connection, tableName, requiredColumns) {
+  const dbName = process.env.DB_NAME || 'u808116186_conbyt_db';
+  
+  try {
+    // Get existing columns
+    const [existingColumns] = await connection.query(`
+      SELECT COLUMN_NAME 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = ? 
+      AND TABLE_NAME = ?
+    `, [dbName, tableName]);
+    
+    const existingColumnNames = existingColumns.map(col => col.COLUMN_NAME.toLowerCase());
+    let addedCount = 0;
+    
+    // Check and add each required column
+    for (const column of requiredColumns) {
+      const columnNameLower = column.name.toLowerCase();
+      
+      if (existingColumnNames.includes(columnNameLower)) {
+        continue; // Column already exists
+      }
+      
+      try {
+        await connection.query(`
+          ALTER TABLE ${tableName} 
+          ADD COLUMN ${column.name} ${column.type} ${column.after ? `AFTER ${column.after}` : ''}
+        `);
+        console.log(`   ✅ Added missing column: ${tableName}.${column.name}`);
+        addedCount++;
+      } catch (error) {
+        // If column already exists (race condition), that's okay
+        if (error.code !== 'ER_DUP_FIELDNAME') {
+          console.error(`   ⚠️  Error adding column ${tableName}.${column.name}:`, error.message);
+        }
+      }
+    }
+    
+    return addedCount;
+  } catch (error) {
+    console.error(`   ⚠️  Error checking columns for ${tableName}:`, error.message);
+    return 0;
+  }
+}
+
 async function runMigration() {
   let connection;
   try {
@@ -73,8 +132,26 @@ async function runMigration() {
       }
     }
     
+    // Check and add missing columns to existing tables
+    console.log('\n🔍 Checking for missing columns in existing tables...');
+    let totalColumnsAdded = 0;
+    
+    for (const [tableName, requiredColumns] of Object.entries(tableColumns)) {
+      const added = await ensureTableColumns(connection, tableName, requiredColumns);
+      totalColumnsAdded += added;
+    }
+    
+    if (totalColumnsAdded > 0) {
+      console.log(`\n✅ Added ${totalColumnsAdded} missing column(s) to existing tables`);
+    } else {
+      console.log(`\n✅ All required columns exist in existing tables`);
+    }
+    
     console.log(`\n🎉 Database migration completed successfully!`);
     console.log(`   Executed ${executedCount} statements`);
+    if (totalColumnsAdded > 0) {
+      console.log(`   Added ${totalColumnsAdded} missing column(s)`);
+    }
     process.exit(0);
   } catch (error) {
     console.error('\n❌ Migration failed:', error.message);

@@ -18,6 +18,7 @@ import adminProjectsRoutes from './routes/admin/projects.js';
 import adminMilestonesRoutes from './routes/admin/milestones.js';
 import adminPaymentsRoutes from './routes/admin/payments.js';
 import adminPortfoliosRoutes from './routes/admin/portfolios.js';
+import { ensureBlogPostsColumns } from './utils/migrateColumns.js';
 
 dotenv.config();
 
@@ -179,11 +180,19 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
-  if (process.env.NODE_ENV === 'production') {
-    console.log(`🌐 Serving static files from dist/`);
-  }
-});
+// Ensure database columns exist before starting server
+ensureBlogPostsColumns()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server is running on port ${PORT}`);
+      console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
+      if (process.env.NODE_ENV === 'production') {
+        console.log(`🌐 Serving static files from dist/`);
+      }
+    });
+  })
+  .catch(err => {
+    console.error('❌ Failed to start server:', err);
+    process.exit(1);
+  });
 
