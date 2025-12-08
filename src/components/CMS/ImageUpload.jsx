@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FaUpload, FaTimes, FaImage } from 'react-icons/fa';
 
 const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or paste image URL", accept = "image/*" }) => {
@@ -8,6 +8,14 @@ const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
   const urlInputRef = useRef(null);
+
+  // Sync with value prop changes (e.g., when editing)
+  useEffect(() => {
+    if (value !== undefined) {
+      setImageUrl(value || '');
+      setPreview(value || '');
+    }
+  }, [value]);
 
   const handleFileSelect = async (file) => {
     if (!file || !file.type.startsWith('image/')) {

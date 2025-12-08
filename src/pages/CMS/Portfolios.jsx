@@ -4,6 +4,38 @@ import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaFolderOpen, FaArrowLeft } from
 import ImageUpload from '../../components/CMS/ImageUpload';
 import { fetchAdminPortfolios, fetchAdminProjects, deleteAdminPortfolio, createAdminPortfolio, updateAdminPortfolio } from '../../utils/api.js';
 
+// Component to handle portfolio image display with error handling
+const PortfolioImage = ({ imageUrl, title }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  if (!imageUrl) {
+    return (
+      <div className="w-full h-48 bg-secondary/50 flex items-center justify-center">
+        <span className="text-white/30 text-sm">No image</span>
+      </div>
+    );
+  }
+  
+  if (imageError) {
+    return (
+      <div className="w-full h-48 bg-secondary/50 flex items-center justify-center">
+        <span className="text-white/50 text-sm">Image not available</span>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="w-full h-48 bg-secondary/50 overflow-hidden">
+      <img
+        src={imageUrl}
+        alt={title}
+        className="w-full h-full object-cover"
+        onError={() => setImageError(true)}
+      />
+    </div>
+  );
+};
+
 const Portfolios = () => {
   const [portfolios, setPortfolios] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -234,13 +266,7 @@ const Portfolios = () => {
           ) : (
             portfolios.map((portfolio) => (
               <div key={portfolio.id} className="bg-surface rounded-xl overflow-hidden border border-white/10 hover:border-accent/50 transition">
-                {portfolio.image_url && (
-                  <img
-                    src={portfolio.image_url}
-                    alt={portfolio.title}
-                    className="w-full h-48 object-cover"
-                  />
-                )}
+                <PortfolioImage imageUrl={portfolio.image_url} title={portfolio.title} />
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="text-xl font-bold text-white">{portfolio.title}</h3>
