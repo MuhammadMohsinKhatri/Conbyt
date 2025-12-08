@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaProjectDiagram, FaArrowLeft, FaSearch, FaDownload, FaFileCsv, FaFileExcel, FaFilter } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaProjectDiagram, FaArrowLeft, FaSearch, FaDownload, FaFileCsv, FaFileExcel, FaFilter, FaTimes } from 'react-icons/fa';
 import { fetchAdminProjects, fetchAdminClients, deleteAdminProject, createAdminProject, updateAdminProject } from '../../utils/api.js';
 import { filterData, downloadCSV, downloadExcel } from '../../utils/exportUtils.js';
 
@@ -467,10 +467,23 @@ const Projects = () => {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface rounded-xl border border-white/10 p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold text-white mb-6">
-              {editingProject ? 'Edit Project' : 'New Project'}
-            </h2>
+          <div className="bg-surface rounded-xl border border-white/10 p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto relative">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">
+                {editingProject ? 'Edit Project' : 'New Project'}
+              </h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowModal(false);
+                  setEditingProject(null);
+                }}
+                className="text-white/70 hover:text-white transition p-2 hover:bg-secondary/50 rounded-lg"
+                aria-label="Close"
+              >
+                <FaTimes className="text-xl" />
+              </button>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-white/70 mb-2">Client *</label>

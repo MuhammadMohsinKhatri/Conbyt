@@ -35,3 +35,10 @@ Desktop.ini
 coverage
 .nyc_output
 
+# Uploaded files (keep structure, ignore content)
+uploads/*
+!uploads/.gitkeep
+!uploads/portfolios/
+uploads/portfolios/*
+!uploads/portfolios/.gitkeep
+

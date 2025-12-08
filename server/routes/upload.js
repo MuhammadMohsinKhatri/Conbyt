@@ -1,0 +1,84 @@
+import express from 'express';
+import upload from '../middleware/upload.js';
+import { authenticateAdmin } from '../middleware/auth.js';
+import fs from 'fs';
+import path from 'path';
+
+const router = express.Router();
+
+// All upload routes require authentication
+router.use(authenticateAdmin);
+
+// Upload portfolio image
+router.post('/portfolio-image', upload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Return the file path that can be used in the database
+    const imageUrl = `/uploads/portfolios/${req.file.filename}`;
+    
+    res.json({
+      success: true,
+      imageUrl: imageUrl,
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      size: req.file.size
+    });
+  } catch (error) {
+    console.error('Error uploading portfolio image:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Upload general image (for future use)
+router.post('/image', upload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const imageUrl = `/uploads/${req.file.filename}`;
+    
+    res.json({
+      success: true,
+      imageUrl: imageUrl,
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      size: req.file.size
+    });
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Delete image (cleanup when portfolio is deleted)
+router.delete('/image', authenticateAdmin, (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+    
+    if (!imageUrl || !imageUrl.startsWith('/uploads/')) {
+      return res.status(400).json({ error: 'Invalid image URL' });
+    }
+
+    // Convert URL to file path
+    const filename = path.basename(imageUrl);
+    const directory = imageUrl.includes('/portfolios/') ? 'portfolios' : '';
+    const filePath = path.join(process.cwd(), 'uploads', directory, filename);
+    
+    // Check if file exists and delete it
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      res.json({ success: true, message: 'Image deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Image not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    res.status(500).json({ error: 'Failed to delete image' });
+  }
+});
+
+export default router;

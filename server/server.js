@@ -18,6 +18,7 @@ import adminProjectsRoutes from './routes/admin/projects.js';
 import adminMilestonesRoutes from './routes/admin/milestones.js';
 import adminPaymentsRoutes from './routes/admin/payments.js';
 import adminPortfoliosRoutes from './routes/admin/portfolios.js';
+import uploadRoutes from './routes/upload.js';
 import { ensureBlogPostsColumns } from './utils/migrateColumns.js';
 
 dotenv.config();
@@ -61,6 +62,7 @@ app.use('/api/admin/projects', adminProjectsRoutes);
 app.use('/api/admin/milestones', adminMilestonesRoutes);
 app.use('/api/admin/payments', adminPaymentsRoutes);
 app.use('/api/admin/portfolios', adminPortfoliosRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Root API endpoint
 app.get('/api', (req, res) => {
@@ -116,6 +118,10 @@ if (process.env.NODE_ENV === 'production') {
       console.error(`❌ Error reading dist folder:`, err);
     }
   }
+  
+  // Serve uploaded files
+  const uploadsPath = path.join(__dirname, 'uploads');
+  app.use('/uploads', express.static(uploadsPath));
   
   // Serve static files (CSS, JS, images, etc.)
   app.use(express.static(distPath, {

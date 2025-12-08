@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FaUpload, FaTimes, FaImage } from 'react-icons/fa';
 
 const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or paste image URL", accept = "image/*" }) => {
@@ -9,6 +9,14 @@ const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or
   const fileInputRef = useRef(null);
   const urlInputRef = useRef(null);
 
+  // Sync with value prop changes (e.g., when editing)
+  useEffect(() => {
+    if (value !== undefined) {
+      setImageUrl(value || '');
+      setPreview(value || '');
+    }
+  }, [value]);
+
   const handleFileSelect = async (file) => {
     if (!file || !file.type.startsWith('image/')) {
       alert('Please select a valid image file');
@@ -18,23 +26,40 @@ const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or
     setIsUploading(true);
     
     try {
-      // Convert to base64 for preview and storage
+      // Create preview using FileReader for immediate display
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64String = reader.result;
-        setPreview(base64String);
-        setImageUrl(base64String);
-        onChange(base64String);
-        setIsUploading(false);
-      };
-      reader.onerror = () => {
-        alert('Error reading file');
-        setIsUploading(false);
+        setPreview(reader.result);
       };
       reader.readAsDataURL(file);
+
+      // Upload file to server
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const token = localStorage.getItem('cms_token');
+      const response = await fetch('/api/upload/portfolio-image', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      
+      // Set the server file path as the image URL
+      setImageUrl(result.imageUrl);
+      onChange(result.imageUrl);
+      setIsUploading(false);
     } catch (error) {
       console.error('Error uploading image:', error);
       alert('Error uploading image. Please try again.');
+      setPreview('');
       setIsUploading(false);
     }
   };
