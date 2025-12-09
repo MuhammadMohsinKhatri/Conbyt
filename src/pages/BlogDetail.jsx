@@ -429,14 +429,29 @@ const BlogDetail = () => {
     );
   }
 
+  // Helper function to get full image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    // If it's a relative path starting with /uploads, return as is (will be served by server)
+    if (imagePath.startsWith('/uploads/')) {
+      return imagePath;
+    }
+    // Otherwise, assume it's a relative path and prepend /uploads
+    return imagePath.startsWith('/') ? imagePath : `/uploads/${imagePath}`;
+  };
+
   // Format blog data from API or use hardcoded structure
   const data = blog.id ? {
     title: blog.title,
     subtitle: blog.excerpt || '',
-    heroImage: blog.image_url || 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80',
+    heroImage: getImageUrl(blog.image_url),
     category: blog.category || 'Uncategorized',
     author: blog.author_name || 'Admin',
-    authorImage: blog.author_avatar || 'https://images.unsplash.com/photo-1494790108755-2616b612b786?auto=format&fit=crop&w=150&q=80',
+    authorImage: getImageUrl(blog.author_avatar),
     authorBio: blog.author_name ? `${blog.author_name} - Author` : 'Content creator and writer',
     date: blog.date ? new Date(blog.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date().toLocaleDateString(),
     readTime: blog.read_time ? `${blog.read_time} min read` : '5 min read',
@@ -479,7 +494,18 @@ const BlogDetail = () => {
             {/* Author and Meta Info */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center">
+                {data.authorImage ? (
+                  <img 
+                    src={data.authorImage} 
+                    alt={data.author}
+                    className="w-10 h-10 rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextElementSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div className={`w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center ${data.authorImage ? 'hidden' : ''}`}>
                   <FaUser className="text-accent" />
                 </div>
                 <div>
@@ -518,6 +544,9 @@ const BlogDetail = () => {
             src={data.heroImage} 
             alt={data.title}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
+            }}
           />
         </div>
       </section>
