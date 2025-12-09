@@ -3,6 +3,9 @@ import pool from '../config/database.js';
 // Define all columns that should exist in blog_posts table
 const requiredColumns = [
   { name: 'image_url', type: 'VARCHAR(500)', after: 'content' },
+  { name: 'author_name', type: 'VARCHAR(100)', after: 'category' },
+  { name: 'author_avatar', type: 'VARCHAR(500)', after: 'author_name' },
+  { name: 'read_time', type: 'INT', after: 'date' },
   { name: 'meta_title', type: 'VARCHAR(255)', after: 'slug' },
   { name: 'meta_description', type: 'TEXT', after: 'meta_title' },
   { name: 'meta_keywords', type: 'VARCHAR(500)', after: 'meta_description' },
@@ -38,12 +41,17 @@ export async function ensureBlogPostsColumns() {
       }
       
       try {
-        await connection.query(`
-          ALTER TABLE blog_posts 
-          ADD COLUMN ${column.name} ${column.type} ${column.after ? `AFTER ${column.after}` : ''}
-        `);
+        // Check if the 'after' column exists before using it
+        let alterQuery = `ALTER TABLE blog_posts ADD COLUMN ${column.name} ${column.type}`;
+        if (column.after && existingColumnNames.includes(column.after.toLowerCase())) {
+          alterQuery += ` AFTER ${column.after}`;
+        }
+        
+        await connection.query(alterQuery);
         console.log(`✅ Added missing column: ${column.name}`);
         addedCount++;
+        // Update the existing columns list so subsequent columns can reference this one
+        existingColumnNames.push(columnNameLower);
       } catch (error) {
         // If column already exists (race condition), that's okay
         if (error.code !== 'ER_DUP_FIELDNAME') {
