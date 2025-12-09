@@ -455,6 +455,7 @@ const CaseStudyDetail = () => {
             <div className="relative">
               <img
                 src={data.heroImage}
+                loading="lazy"
                 alt={data.title}
                 className="w-full h-auto max-h-96 object-contain rounded-xl shadow-2xl"
               />

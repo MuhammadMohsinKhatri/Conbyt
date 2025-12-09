@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaFolderOpen, FaArrowLeft, FaTimes } from 'react-icons/fa';
 import ImageUpload from '../../components/CMS/ImageUpload';
@@ -40,6 +40,7 @@ const PortfolioImage = ({ imageUrl, title }) => {
         return (
           <img
             src={resolved}
+            loading="lazy"
             alt={title}
             className="w-full h-full object-cover"
             onError={() => setImageError(true)}
@@ -59,6 +60,12 @@ const Portfolios = () => {
   const [editingPortfolio, setEditingPortfolio] = useState(null);
   const [selectedPortfolio, setSelectedPortfolio] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  // Normalize tech_stack for selected portfolio to avoid runtime errors
+  const normalizedSelectedTechStack = selectedPortfolio
+    ? (typeof selectedPortfolio.tech_stack === 'string'
+        ? JSON.parse(selectedPortfolio.tech_stack || '[]')
+        : selectedPortfolio.tech_stack || [])
+    : [];
   const [formData, setFormData] = useState({
     project_id: '',
     title: '',
@@ -546,7 +553,7 @@ const Portfolios = () => {
               {selectedPortfolio.description || 'No description provided.'}
             </p>
             <div className="flex flex-wrap gap-2 mb-4">
-              {(selectedPortfolio.tech_stack || []).map((tech, i) => (
+              {normalizedSelectedTechStack.map((tech, i) => (
                 <span key={i} className="px-3 py-1 bg-accent/20 border border-accent/30 rounded-lg text-accent text-sm">
                   {tech}
                 </span>

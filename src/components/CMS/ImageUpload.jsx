@@ -231,6 +231,7 @@ const ImageUpload = ({
       {preview && (
         <div className="relative w-full h-48 rounded-lg overflow-hidden border border-white/20 bg-secondary/50 mb-3">
           <img
+            loading="lazy"
             src={(() => {
               try {
                 if (preview && (preview.startsWith('/') || preview.startsWith('./'))) {
