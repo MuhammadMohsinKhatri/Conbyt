@@ -431,7 +431,10 @@ const BlogDetail = () => {
 
   // Helper function to get full image URL
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
+    // Return null if no image path (we'll handle this separately)
+    if (!imagePath || imagePath.trim() === '') {
+      return null;
+    }
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
       return imagePath;
@@ -444,14 +447,31 @@ const BlogDetail = () => {
     return imagePath.startsWith('/') ? imagePath : `/uploads/${imagePath}`;
   };
 
+  // Default fallback image
+  const defaultImage = 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
+
   // Format blog data from API or use hardcoded structure
+  const heroImageUrl = getImageUrl(blog.image_url);
+  const hasImageUrl = !!blog.image_url && blog.image_url.trim() !== '';
+  
+  // Debug logging
+  if (blog.id) {
+    console.log('📸 Blog Image Debug:', {
+      'image_url from DB': blog.image_url,
+      'processed URL': heroImageUrl,
+      'hasImageUrl': hasImageUrl,
+      'will use': hasImageUrl ? heroImageUrl : defaultImage
+    });
+  }
+  
   const data = blog.id ? {
     title: blog.title,
     subtitle: blog.excerpt || '',
-    heroImage: getImageUrl(blog.image_url),
+    heroImage: heroImageUrl || defaultImage,
+    hasImageUrl: hasImageUrl,
     category: blog.category || 'Uncategorized',
     author: blog.author_name || 'Admin',
-    authorImage: getImageUrl(blog.author_avatar),
+    authorImage: getImageUrl(blog.author_avatar) || defaultImage,
     authorBio: blog.author_name ? `${blog.author_name} - Author` : 'Content creator and writer',
     date: blog.date ? new Date(blog.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date().toLocaleDateString(),
     readTime: blog.read_time ? `${blog.read_time} min read` : '5 min read',
@@ -540,14 +560,31 @@ const BlogDetail = () => {
       {/* Hero Image */}
       <section className="max-w-4xl mx-auto px-6 py-8">
         <div className="w-full h-64 md:h-80 bg-gradient-to-br from-secondary/30 to-surface rounded-xl overflow-hidden">
-          <img 
-            src={data.heroImage} 
-            alt={data.title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
-            }}
-          />
+          {data.hasImageUrl ? (
+            <img 
+              key={data.heroImage} 
+              src={data.heroImage} 
+              alt={data.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Only fall back if the current src is not already the default
+                const currentSrc = e.target.src;
+                if (!currentSrc.includes('unsplash.com')) {
+                  console.warn('Failed to load uploaded blog image:', data.heroImage, 'Falling back to default');
+                  e.target.src = defaultImage;
+                }
+              }}
+              onLoad={() => {
+                console.log('✅ Successfully loaded blog image:', data.heroImage);
+              }}
+            />
+          ) : (
+            <img 
+              src={defaultImage} 
+              alt={data.title}
+              className="w-full h-full object-cover"
+            />
+          )}
         </div>
       </section>
 
