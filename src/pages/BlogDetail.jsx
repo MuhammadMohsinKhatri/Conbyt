@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { FaArrowLeft, FaCalendar, FaUser, FaClock, FaTag, FaShare, FaFacebook, FaTwitter, FaLinkedin } from "react-icons/fa";
+import { fetchBlogBySlug } from "../utils/api";
 
 import blog1 from "../assets/blogs/blog1.webp";
 import blog2 from "../assets/blogs/blog2.webp";
@@ -373,13 +374,53 @@ const blogData = {
 
 const BlogDetail = () => {
   const { slug } = useParams();
-  const data = blogData[slug];
+  const [blog, setBlog] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!data) {
+  useEffect(() => {
+    const loadBlog = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        // First try to fetch from API
+        const blogData = await fetchBlogBySlug(slug);
+        setBlog(blogData);
+      } catch (err) {
+        // If API fails, try hardcoded data as fallback
+        const hardcodedData = blogData[slug];
+        if (hardcodedData) {
+          setBlog(hardcodedData);
+        } else {
+          setError('Blog post not found');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (slug) {
+      loadBlog();
+    }
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-primary text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+          <p className="text-white/70">Loading blog post...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !blog) {
     return (
       <div className="min-h-screen bg-primary text-white flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4">Blog Post Not Found</h1>
+          <p className="text-white/70 mb-6">{error || 'The blog post you are looking for does not exist.'}</p>
           <Link to="/blog" className="text-accent hover:underline">
             ← Back to Blog
           </Link>
@@ -387,6 +428,39 @@ const BlogDetail = () => {
       </div>
     );
   }
+
+  // Format blog data from API or use hardcoded structure
+  const data = blog.id ? {
+    title: blog.title,
+    subtitle: blog.excerpt || '',
+    heroImage: blog.image_url || 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80',
+    category: blog.category || 'Uncategorized',
+    author: blog.author_name || 'Admin',
+    authorImage: blog.author_avatar || 'https://images.unsplash.com/photo-1494790108755-2616b612b786?auto=format&fit=crop&w=150&q=80',
+    authorBio: blog.author_name ? `${blog.author_name} - Author` : 'Content creator and writer',
+    date: blog.date ? new Date(blog.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date().toLocaleDateString(),
+    readTime: blog.read_time ? `${blog.read_time} min read` : '5 min read',
+    tags: blog.category ? [blog.category] : [],
+    introduction: {
+      content: blog.excerpt || (blog.content ? blog.content.substring(0, 200) + '...' : ''),
+      keyPoints: []
+    },
+    content: {
+      sections: blog.content ? [
+        {
+          title: '',
+          content: blog.content,
+          subsections: []
+        }
+      ] : []
+    },
+    conclusion: {
+      title: 'Conclusion',
+      content: ''
+    },
+    relatedPosts: [],
+    rawContent: blog.content // Store raw content for rendering
+  } : blog;
 
   return (
     <div className="min-h-screen bg-primary text-white">
@@ -470,19 +544,32 @@ const BlogDetail = () => {
       {/* Main Content */}
       <section className="max-w-4xl mx-auto px-6 py-8">
         <div className="prose prose-invert max-w-none">
-          {data.content.sections.map((section, sectionIdx) => (
-            <div key={sectionIdx} className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-6">{section.title}</h2>
-              <p className="text-white/80 text-lg leading-relaxed mb-6">{section.content}</p>
-              
-              {section.subsections && section.subsections.map((subsection, subIdx) => (
-                <div key={subIdx} className="mb-6">
-                  <h3 className="text-xl font-semibold text-white mb-3">{subsection.title}</h3>
-                  <p className="text-white/80 leading-relaxed">{subsection.content}</p>
+          {data.rawContent ? (
+            <div 
+              className="text-white/80 text-lg leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: data.rawContent }}
+            />
+          ) : (
+            data.content.sections.map((section, sectionIdx) => (
+              <div key={sectionIdx} className="mb-12">
+                {section.title && <h2 className="text-2xl font-bold text-white mb-6">{section.title}</h2>}
+                <div className="text-white/80 text-lg leading-relaxed mb-6">
+                  {section.content.includes('<') ? (
+                    <div dangerouslySetInnerHTML={{ __html: section.content }} />
+                  ) : (
+                    <p>{section.content}</p>
+                  )}
                 </div>
-              ))}
-            </div>
-          ))}
+                
+                {section.subsections && section.subsections.map((subsection, subIdx) => (
+                  <div key={subIdx} className="mb-6">
+                    <h3 className="text-xl font-semibold text-white mb-3">{subsection.title}</h3>
+                    <p className="text-white/80 leading-relaxed">{subsection.content}</p>
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
         </div>
       </section>
 
