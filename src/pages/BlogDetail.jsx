@@ -575,7 +575,7 @@ const BlogDetail = () => {
         <div className="prose prose-invert max-w-none">
           {data.rawContent ? (
             <div 
-              className="text-white/80 text-lg leading-relaxed"
+              className="text-white/80 text-lg leading-relaxed prose prose-invert max-w-none blog-content"
               dangerouslySetInnerHTML={{ __html: data.rawContent }}
             />
           ) : (
@@ -672,6 +672,70 @@ const BlogDetail = () => {
           </button>
         </div>
       </section>
+      
+      {/* Styles for blog content links and formatting */}
+      <style>{`
+        .blog-content a {
+          color: #7c3aed !important;
+          text-decoration: underline !important;
+          cursor: pointer !important;
+          transition: color 0.2s;
+        }
+        .blog-content a:hover {
+          color: #a78bfa !important;
+        }
+        .blog-content h1, .blog-content h2, .blog-content h3, .blog-content h4, .blog-content h5, .blog-content h6 {
+          font-weight: bold;
+          margin-top: 1.5em;
+          margin-bottom: 0.5em;
+          color: white;
+        }
+        .blog-content h1 { font-size: 2.5em; }
+        .blog-content h2 { font-size: 2em; }
+        .blog-content h3 { font-size: 1.75em; }
+        .blog-content h4 { font-size: 1.5em; }
+        .blog-content h5 { font-size: 1.25em; }
+        .blog-content h6 { font-size: 1em; }
+        .blog-content ul, .blog-content ol {
+          margin: 1em 0;
+          padding-left: 2em;
+        }
+        .blog-content li {
+          margin: 0.5em 0;
+        }
+        .blog-content p {
+          margin: 1em 0;
+        }
+        .blog-content img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 8px;
+          margin: 1em 0;
+        }
+        .blog-content blockquote {
+          border-left: 4px solid #7c3aed;
+          padding-left: 1em;
+          margin: 1em 0;
+          font-style: italic;
+          color: rgba(255, 255, 255, 0.7);
+        }
+        .blog-content code {
+          background: rgba(255, 255, 255, 0.1);
+          padding: 0.2em 0.4em;
+          border-radius: 4px;
+          font-family: monospace;
+        }
+        .blog-content pre {
+          background: rgba(255, 255, 255, 0.1);
+          padding: 1em;
+          border-radius: 8px;
+          overflow-x: auto;
+        }
+        .blog-content pre code {
+          background: none;
+          padding: 0;
+        }
+      `}</style>
     </div>
   );
 };

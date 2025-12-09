@@ -1,11 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaUpload, FaTimes, FaImage } from 'react-icons/fa';
+import { FaUpload, FaTimes, FaImage, FaExclamationTriangle } from 'react-icons/fa';
 
-const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or paste image URL", accept = "image/*", uploadEndpoint = "/api/upload/image" }) => {
+const ImageUpload = ({ 
+  value, 
+  onChange, 
+  label, 
+  placeholder = "Click to upload or paste image URL", 
+  accept = "image/*", 
+  uploadEndpoint = "/api/upload/image",
+  altText: externalAltText,
+  onAltTextChange
+}) => {
   const [imageUrl, setImageUrl] = useState(value || '');
   const [preview, setPreview] = useState(value || '');
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [altText, setAltText] = useState(externalAltText || '');
+  const [showAltWarning, setShowAltWarning] = useState(false);
   const fileInputRef = useRef(null);
   const urlInputRef = useRef(null);
 
@@ -14,8 +25,30 @@ const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or
     if (value !== undefined) {
       setImageUrl(value || '');
       setPreview(value || '');
+      // Check if image exists but alt text is missing
+      if (value && !altText) {
+        setShowAltWarning(true);
+      } else {
+        setShowAltWarning(false);
+      }
     }
-  }, [value]);
+  }, [value, altText]);
+
+  // Sync with external alt text prop
+  useEffect(() => {
+    if (externalAltText !== undefined) {
+      setAltText(externalAltText || '');
+    }
+  }, [externalAltText]);
+
+  // Check alt text when it changes
+  useEffect(() => {
+    if (imageUrl && !altText.trim()) {
+      setShowAltWarning(true);
+    } else {
+      setShowAltWarning(false);
+    }
+  }, [imageUrl, altText]);
 
   const handleFileSelect = async (file) => {
     if (!file || !file.type.startsWith('image/')) {
@@ -63,6 +96,11 @@ const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or
       setPreview(result.imageUrl); // Update preview to use server URL
       onChange(result.imageUrl);
       setIsUploading(false);
+      
+      // Show warning if alt text is missing
+      if (!altText.trim()) {
+        setShowAltWarning(true);
+      }
     } catch (error) {
       console.error('Error uploading image:', error);
       const errorMessage = error.message || 'Error uploading image. Please try again.';
@@ -83,6 +121,21 @@ const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or
     setImageUrl(url);
     setPreview(url);
     onChange(url);
+    // Show warning if alt text is missing
+    if (url && !altText.trim()) {
+      setShowAltWarning(true);
+    }
+  };
+
+  const handleAltTextChange = (text) => {
+    setAltText(text);
+    if (onAltTextChange) {
+      onAltTextChange(text);
+    }
+    // Hide warning if alt text is provided
+    if (text.trim()) {
+      setShowAltWarning(false);
+    }
   };
 
   const handlePaste = (e) => {
@@ -137,12 +190,25 @@ const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or
         <label className="block text-white mb-2 font-medium">{label}</label>
       )}
       
+      {/* Alt Text Warning */}
+      {showAltWarning && preview && (
+        <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3 mb-3 flex items-start gap-2">
+          <FaExclamationTriangle className="text-yellow-400 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-yellow-300 text-sm font-medium">Alt text missing</p>
+            <p className="text-yellow-200/80 text-xs mt-1">
+              This image needs alt text for accessibility. Please add a description below.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Preview */}
       {preview && (
-        <div className="relative w-full h-48 rounded-lg overflow-hidden border border-white/20 bg-secondary/50">
+        <div className="relative w-full h-48 rounded-lg overflow-hidden border border-white/20 bg-secondary/50 mb-3">
           <img
             src={preview}
-            alt="Preview"
+            alt={altText || "Preview"}
             className="w-full h-full object-cover"
             onError={() => setPreview('')}
           />
@@ -196,7 +262,7 @@ const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or
       </div>
 
       {/* URL Input */}
-      <div className="relative">
+      <div className="relative mb-3">
         <input
           ref={urlInputRef}
           type="text"
@@ -207,6 +273,31 @@ const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or
         />
         <p className="text-white/50 text-xs mt-1">Or enter image URL or file path</p>
       </div>
+
+      {/* Alt Text Input */}
+      {preview && (
+        <div className="relative">
+          <label className="block text-white mb-2 font-medium text-sm">
+            Alt Text (Accessibility) {!altText.trim() && <span className="text-yellow-400">*</span>}
+          </label>
+          <input
+            type="text"
+            value={altText}
+            onChange={(e) => handleAltTextChange(e.target.value)}
+            placeholder="Describe the image for screen readers (e.g., 'A person typing on a laptop')"
+            className={`w-full px-4 py-3 bg-primary/80 border rounded-lg text-white placeholder-white/50 focus:outline-none ${
+              showAltWarning 
+                ? 'border-yellow-500/50 focus:border-yellow-500' 
+                : 'border-white/20 focus:border-accent'
+            }`}
+          />
+          <p className="text-white/50 text-xs mt-1">
+            {altText.trim() 
+              ? `${altText.length} characters - Good for accessibility` 
+              : 'Required for accessibility and SEO'}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FaSave, FaTimes, FaEye, FaImage } from 'react-icons/fa';
 import SEOPlugin from '../../components/SEO/SEOPlugin';
 import ImageUpload from '../../components/CMS/ImageUpload';
+import RichTextEditor from '../../components/CMS/RichTextEditor';
 import { fetchAdminBlog, createAdminBlog, updateAdminBlog } from '../../utils/api.js';
 
 const BlogEditor = () => {
@@ -241,16 +242,12 @@ const BlogEditor = () => {
 
             <div className="mt-4">
               <label className="block text-white mb-2 font-medium">Content *</label>
-              <textarea
-                name="content"
+              <RichTextEditor
                 value={formData.content}
-                onChange={handleChange}
-                rows="15"
-                className="w-full px-4 py-3 bg-primary/80 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-accent resize-none font-mono text-sm"
+                onChange={(content) => setFormData({ ...formData, content })}
                 placeholder="Write your blog post content here..."
-                required
               />
-              <p className="text-white/50 text-xs mt-1">Supports HTML and Markdown</p>
+              <p className="text-white/50 text-xs mt-1">Rich text editor with formatting options</p>
             </div>
           </div>
 
