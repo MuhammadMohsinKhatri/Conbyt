@@ -1,64 +1,64 @@
 import { FaCircle } from "react-icons/fa";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import blog1 from "../assets/blogs/blog1.webp";
-import blog2 from "../assets/blogs/blog2.webp";
-import blog3 from "../assets/blogs/blog3.webp";
-import blog4 from "../assets/blogs/blog4.webp";
-
-const blogs = [
-  {
-    title: "The Future of AI in Business: 2024 Trends and Predictions",
-    image: blog1,
-    link: "/blog/future-of-ai-business-2024",
-    author: {
-      name: "Sarah Johnson",
-      avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-    },
-    date: "2024-03-15",
-    readTime: 8,
-  },
-  {
-    title: "Machine Learning vs Deep Learning: Understanding the Differences",
-    image: blog2,
-    link: "/blog/machine-learning-vs-deep-learning",
-    author: {
-      name: "Michael Chen",
-      avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-    },
-    date: "2024-03-10",
-    readTime: 12,
-  },
-  {
-    title: "Building Scalable AI Solutions: Best Practices for Enterprise",
-    image: blog3,
-    link: "/blog/building-scalable-ai-solutions",
-    author: {
-      name: "David Rodriguez",
-      avatar: "https://randomuser.me/api/portraits/men/76.jpg",
-    },
-    date: "2024-03-05",
-    readTime: 15,
-  },
-  {
-    title: "Natural Language Processing: Revolutionizing Customer Service",
-    image: blog4,
-    link: "/blog/nlp-revolutionizing-customer-service",
-    author: {
-      name: "Emily Watson",
-      avatar: "https://randomuser.me/api/portraits/women/65.jpg",
-    },
-    date: "2024-02-28",
-    readTime: 10,
-  },
-];
+import { fetchBlogs } from "../utils/api";
 
 const BlogSection = () => {
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   // Refs for elements that need entrance animations
   const titleRef = useRef(null);
   const timelineRef = useRef(null);
   const blogGridRef = useRef(null);
   const ctaRef = useRef(null);
+
+  // Helper function to get full image URL
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    // If it's a relative path starting with /uploads, return as is (will be served by server)
+    if (imagePath.startsWith('/uploads/')) {
+      return imagePath;
+    }
+    // Otherwise, assume it's a relative path and prepend /uploads
+    return imagePath.startsWith('/') ? imagePath : `/uploads/${imagePath}`;
+  };
+
+  // Fetch blogs from API
+  useEffect(() => {
+    const loadBlogs = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const blogPosts = await fetchBlogs();
+        // Transform blog data to match component format and limit to 4 blogs
+        const transformedBlogs = blogPosts.slice(0, 4).map(post => ({
+          title: post.title,
+          image: getImageUrl(post.image_url),
+          link: `/blog/${post.slug}`,
+          author: {
+            name: post.author_name || 'Admin',
+            avatar: post.author_avatar || 'https://randomuser.me/api/portraits/women/44.jpg',
+          },
+          date: post.date || new Date().toISOString().split('T')[0],
+          readTime: post.read_time || 5,
+        }));
+        setBlogs(transformedBlogs);
+      } catch (err) {
+        console.error('Error loading blogs:', err);
+        setError('Failed to load blog posts');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBlogs();
+  }, []);
 
   // Intersection Observer for scroll-triggered animations
   useEffect(() => {
@@ -122,42 +122,57 @@ const BlogSection = () => {
         </div>
         
         <div className="relative">
-          {/* Vertical center timeline line with dots */}
-          <div 
-            ref={timelineRef}
-            className="hidden md:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-surface/60 z-0 opacity-0 translate-y-8 transition-all duration-1000 ease-out delay-200" 
-            style={{ transform: "translateX(-50%)" }}
-          >
-            {/* Dot 1: Top of upper two blogs center */}
-            <div className="absolute w-4 h-4 bg-accent rounded-full border-2 border-white" style={{ 
-              left: '50%', 
-              top: '7%', 
-              transform: 'translate(-50%, -50%)' 
-            }} />
-            {/* Dot 2: Bottom of upper two blogs center */}
-            <div className="absolute w-4 h-4 bg-accent rounded-full border-2 border-white" style={{ 
-              left: '50%', 
-              top: '39%', 
-              transform: 'translate(-50%, -50%)' 
-            }} />
-            {/* Dot 3: Top of lower two blogs center */}
-            <div className="absolute w-4 h-4 bg-accent rounded-full border-2 border-white" style={{ 
-              left: '50%', 
-              top: '61%', 
-              transform: 'translate(-50%, -50%)' 
-            }} />
-            {/* Dot 4: Bottom of lower two blogs center */}
-            <div className="absolute w-4 h-4 bg-accent rounded-full border-2 border-white" style={{ 
-              left: '50%', 
-              top: '93%', 
-              transform: 'translate(-50%, -50%)' 
-            }} />
-          </div>
-          <div 
-            ref={blogGridRef}
-            className="grid grid-cols-1 md:grid-cols-2 gap-x-24 gap-y-24 opacity-0 translate-y-8 transition-all duration-1000 ease-out delay-400"
-          >
-            {rows.map((pair, rowIdx) => (
+          {loading ? (
+            <div className="text-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+              <p className="text-white/70">Loading blog posts...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-16">
+              <p className="text-red-400 mb-4">{error}</p>
+            </div>
+          ) : blogs.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-white/70">No blog posts available yet. Check back soon!</p>
+            </div>
+          ) : (
+            <>
+              {/* Vertical center timeline line with dots */}
+              <div 
+                ref={timelineRef}
+                className="hidden md:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-surface/60 z-0 opacity-0 translate-y-8 transition-all duration-1000 ease-out delay-200" 
+                style={{ transform: "translateX(-50%)" }}
+              >
+                {/* Dot 1: Top of upper two blogs center */}
+                <div className="absolute w-4 h-4 bg-accent rounded-full border-2 border-white" style={{ 
+                  left: '50%', 
+                  top: '7%', 
+                  transform: 'translate(-50%, -50%)' 
+                }} />
+                {/* Dot 2: Bottom of upper two blogs center */}
+                <div className="absolute w-4 h-4 bg-accent rounded-full border-2 border-white" style={{ 
+                  left: '50%', 
+                  top: '39%', 
+                  transform: 'translate(-50%, -50%)' 
+                }} />
+                {/* Dot 3: Top of lower two blogs center */}
+                <div className="absolute w-4 h-4 bg-accent rounded-full border-2 border-white" style={{ 
+                  left: '50%', 
+                  top: '61%', 
+                  transform: 'translate(-50%, -50%)' 
+                }} />
+                {/* Dot 4: Bottom of lower two blogs center */}
+                <div className="absolute w-4 h-4 bg-accent rounded-full border-2 border-white" style={{ 
+                  left: '50%', 
+                  top: '93%', 
+                  transform: 'translate(-50%, -50%)' 
+                }} />
+              </div>
+              <div 
+                ref={blogGridRef}
+                className="grid grid-cols-1 md:grid-cols-2 gap-x-24 gap-y-24 opacity-0 translate-y-8 transition-all duration-1000 ease-out delay-400"
+              >
+                {rows.map((pair, rowIdx) => (
               <React.Fragment key={rowIdx}>
                 {/* Left Card */}
                 {pair[0] && (
@@ -168,16 +183,19 @@ const BlogSection = () => {
                         alt={pair[0].title}
                         className="w-full h-full object-cover min-h-[24rem] min-w-[24rem]"
                         loading="lazy"
+                        onError={(e) => {
+                          e.target.src = 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
+                        }}
                       />
                       <div className="absolute inset-0 bg-black/60 flex flex-col justify-end p-10">
                         <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">{pair[0].title}</h3>
-                        <a
-                          href={pair[0].link}
+                        <Link
+                          to={pair[0].link}
                           className="mt-2 text-white text-lg md:text-xl font-semibold underline-offset-4 decoration-accent transition-colors duration-200 hover:text-accent hover:decoration-accent2 flex items-center gap-1 group/readmore"
                         >
                           Read More
                           <span className="text-xl group-hover/readmore:translate-x-1 transition-transform">&gt;</span>
-                        </a>
+                        </Link>
                         <div className="flex items-center gap-3 mt-6">
                           <img src={pair[0].author.avatar} alt={pair[0].author.name} className="w-9 h-9 rounded-full object-cover border-2 border-accent" />
                           <div className="flex flex-col text-white/80 text-xs">
@@ -214,16 +232,19 @@ const BlogSection = () => {
                         alt={pair[1].title}
                         className="w-full h-full object-cover min-h-[24rem] min-w-[24rem]"
                         loading="lazy"
+                        onError={(e) => {
+                          e.target.src = 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
+                        }}
                       />
                       <div className="absolute inset-0 bg-black/60 flex flex-col justify-end p-10">
                         <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">{pair[1].title}</h3>
-                        <a
-                          href={pair[1].link}
+                        <Link
+                          to={pair[1].link}
                           className="mt-2 text-white text-lg md:text-xl font-semibold underline-offset-4 decoration-accent transition-colors duration-200 hover:text-accent hover:decoration-accent2 flex items-center gap-1 group/readmore"
                         >
                           Read More
                           <span className="text-xl group-hover/readmore:translate-x-1 transition-transform">&gt;</span>
-                        </a>
+                        </Link>
                         <div className="flex items-center gap-3 mt-6">
                           <img src={pair[1].author.avatar} alt={pair[1].author.name} className="w-9 h-9 rounded-full object-cover border-2 border-accent" />
                           <div className="flex flex-col text-white/80 text-xs">
@@ -253,7 +274,9 @@ const BlogSection = () => {
                 )}
               </React.Fragment>
             ))}
-          </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* CTA */}
