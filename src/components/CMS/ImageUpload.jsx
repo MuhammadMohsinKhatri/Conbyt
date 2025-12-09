@@ -24,7 +24,16 @@ const ImageUpload = ({
   useEffect(() => {
     if (value !== undefined) {
       setImageUrl(value || '');
-      setPreview(value || '');
+      // Resolve preview for relative paths
+      try {
+        if (value && (value.startsWith('/') || value.startsWith('./'))) {
+          setPreview(`${window.location.origin}${value.startsWith('./') ? value.slice(1) : value}`);
+        } else {
+          setPreview(value || '');
+        }
+      } catch (err) {
+        setPreview(value || '');
+      }
       // Check if image exists but alt text is missing
       if (value && !altText) {
         setShowAltWarning(true);
@@ -93,7 +102,13 @@ const ImageUpload = ({
       // Set the server file path as the image URL
       console.log('Image uploaded successfully:', result.imageUrl);
       setImageUrl(result.imageUrl);
-      setPreview(result.imageUrl); // Update preview to use server URL
+      // Resolve preview to absolute URL for display
+      try {
+        const resolved = result.imageUrl && (result.imageUrl.startsWith('/') ? `${window.location.origin}${result.imageUrl}` : result.imageUrl);
+        setPreview(resolved);
+      } catch (err) {
+        setPreview(result.imageUrl);
+      }
       onChange(result.imageUrl);
       setIsUploading(false);
       
@@ -119,7 +134,16 @@ const ImageUpload = ({
 
   const handleUrlChange = (url) => {
     setImageUrl(url);
-    setPreview(url);
+    // Resolve preview if relative
+    try {
+      if (url && (url.startsWith('/') || url.startsWith('./'))) {
+        setPreview(`${window.location.origin}${url.startsWith('./') ? url.slice(1) : url}`);
+      } else {
+        setPreview(url);
+      }
+    } catch (err) {
+      setPreview(url);
+    }
     onChange(url);
     // Show warning if alt text is missing
     if (url && !altText.trim()) {
@@ -207,7 +231,14 @@ const ImageUpload = ({
       {preview && (
         <div className="relative w-full h-48 rounded-lg overflow-hidden border border-white/20 bg-secondary/50 mb-3">
           <img
-            src={preview}
+            src={(() => {
+              try {
+                if (preview && (preview.startsWith('/') || preview.startsWith('./'))) {
+                  return `${window.location.origin}${preview.startsWith('./') ? preview.slice(1) : preview}`;
+                }
+              } catch (err) {}
+              return preview;
+            })()}
             alt={altText || "Preview"}
             className="w-full h-full object-cover"
             onError={() => setPreview('')}

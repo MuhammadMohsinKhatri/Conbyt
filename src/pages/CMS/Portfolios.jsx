@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaFolderOpen, FaArrowLeft } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaFolderOpen, FaArrowLeft, FaTimes } from 'react-icons/fa';
 import ImageUpload from '../../components/CMS/ImageUpload';
 import { fetchAdminPortfolios, fetchAdminProjects, deleteAdminPortfolio, createAdminPortfolio, updateAdminPortfolio } from '../../utils/api.js';
 
@@ -26,12 +26,26 @@ const PortfolioImage = ({ imageUrl, title }) => {
   
   return (
     <div className="w-full h-48 bg-secondary/50 overflow-hidden">
-      <img
-        src={imageUrl}
-        alt={title}
-        className="w-full h-full object-cover"
-        onError={() => setImageError(true)}
-      />
+      {(() => {
+        // Resolve relative server paths to absolute so previews work in production
+        let resolved = imageUrl;
+        try {
+          if (imageUrl && (imageUrl.startsWith('/') || imageUrl.startsWith('./'))) {
+            resolved = `${window.location.origin}${imageUrl.startsWith('./') ? imageUrl.slice(1) : imageUrl}`;
+          }
+        } catch (err) {
+          resolved = imageUrl;
+        }
+
+        return (
+          <img
+            src={resolved}
+            alt={title}
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+          />
+        );
+      })()}
     </div>
   );
 };
@@ -43,6 +57,8 @@ const Portfolios = () => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingPortfolio, setEditingPortfolio] = useState(null);
+  const [selectedPortfolio, setSelectedPortfolio] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [formData, setFormData] = useState({
     project_id: '',
     title: '',
@@ -268,7 +284,14 @@ const Portfolios = () => {
             </div>
           ) : (
             portfolios.map((portfolio) => (
-              <div key={portfolio.id} className="bg-surface rounded-xl overflow-hidden border border-white/10 hover:border-accent/50 transition">
+              <div
+                key={portfolio.id}
+                className="bg-surface rounded-xl overflow-hidden border border-white/10 hover:border-accent/50 transition cursor-pointer"
+                onClick={() => {
+                  setSelectedPortfolio(portfolio);
+                  setShowDetailModal(true);
+                }}
+              >
                 <PortfolioImage imageUrl={portfolio.image_url} title={portfolio.title} />
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-2">
@@ -284,14 +307,20 @@ const Portfolios = () => {
                     <span className="text-white/60 text-sm">{portfolio.category || 'Uncategorized'}</span>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleEdit(portfolio)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(portfolio);
+                        }}
                         className="p-2 bg-accent/20 border border-accent/30 rounded-lg text-accent hover:bg-accent/30 transition"
                         title="Edit"
                       >
                         <FaEdit />
                       </button>
                       <button
-                        onClick={() => handleDelete(portfolio.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(portfolio.id);
+                        }}
                         className="p-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 hover:bg-red-500/30 transition"
                         title="Delete"
                       >
@@ -309,7 +338,18 @@ const Portfolios = () => {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface rounded-xl border border-white/10 p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-surface rounded-xl border border-white/10 p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setShowModal(false);
+                setEditingPortfolio(null);
+              }}
+              className="absolute top-4 right-4 bg-red-500/10 hover:bg-red-500/20 text-red-300 p-2 rounded-full transition"
+              aria-label="Close"
+            >
+              <FaTimes />
+            </button>
             <h2 className="text-2xl font-bold text-white mb-6">
               {editingPortfolio ? 'Edit Portfolio' : 'New Portfolio'}
             </h2>
@@ -480,6 +520,50 @@ const Portfolios = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Detail Modal */}
+      {showDetailModal && selectedPortfolio && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="relative bg-surface rounded-xl border border-white/10 p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setShowDetailModal(false);
+                setSelectedPortfolio(null);
+              }}
+              className="absolute top-4 right-4 bg-red-500/10 hover:bg-red-500/20 text-red-300 p-2 rounded-full transition"
+              aria-label="Close"
+            >
+              <FaTimes />
+            </button>
+            <h2 className="text-2xl font-bold text-white mb-4">{selectedPortfolio.title}</h2>
+            <div className="mb-4">
+              <PortfolioImage imageUrl={selectedPortfolio.image_url} title={selectedPortfolio.title} />
+            </div>
+            <p className="text-white/80 mb-4 whitespace-pre-line">
+              {selectedPortfolio.description || 'No description provided.'}
+            </p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {(selectedPortfolio.tech_stack || []).map((tech, i) => (
+                <span key={i} className="px-3 py-1 bg-accent/20 border border-accent/30 rounded-lg text-accent text-sm">
+                  {tech}
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-4">
+              {selectedPortfolio.live_url && (
+                <a href={selectedPortfolio.live_url} target="_blank" rel="noreferrer" className="px-4 py-2 bg-accent/20 rounded text-accent">
+                  Live
+                </a>
+              )}
+              {selectedPortfolio.github_url && (
+                <a href={selectedPortfolio.github_url} target="_blank" rel="noreferrer" className="px-4 py-2 bg-secondary/20 rounded text-white/80">
+                  GitHub
+                </a>
+              )}
+            </div>
           </div>
         </div>
       )}
