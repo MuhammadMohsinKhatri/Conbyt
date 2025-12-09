@@ -4,7 +4,7 @@ FROM node:22-alpine AS frontend-builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 RUN rm -rf node_modules/.vite .vite dist
 
