@@ -1,24 +1,26 @@
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
-import Home from "./pages/Home";
-import CaseStudies from "./pages/CaseStudies";
-import CaseStudyDetail from "./pages/CaseStudyDetail";
-import Blog from "./pages/Blog";
-import BlogDetail from "./pages/BlogDetail";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import CMSLogin from "./pages/CMS/Login";
-import CMSDashboard from "./pages/CMS/Dashboard";
-import BlogEditor from "./pages/CMS/BlogEditor";
-import Blogs from "./pages/CMS/Blogs";
-import ContactSubmissions from "./pages/CMS/ContactSubmissions";
-import Clients from "./pages/CMS/Clients";
-import Projects from "./pages/CMS/Projects";
-import Milestones from "./pages/CMS/Milestones";
-import Payments from "./pages/CMS/Payments";
-import Portfolios from "./pages/CMS/Portfolios";
+
+const Home = lazy(() => import("./pages/Home"));
+const CaseStudies = lazy(() => import("./pages/CaseStudies"));
+const CaseStudyDetail = lazy(() => import("./pages/CaseStudyDetail"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogDetail = lazy(() => import("./pages/BlogDetail"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const CMSLogin = lazy(() => import("./pages/CMS/Login"));
+const CMSDashboard = lazy(() => import("./pages/CMS/Dashboard"));
+const BlogEditor = lazy(() => import("./pages/CMS/BlogEditor"));
+const Blogs = lazy(() => import("./pages/CMS/Blogs"));
+const ContactSubmissions = lazy(() => import("./pages/CMS/ContactSubmissions"));
+const Clients = lazy(() => import("./pages/CMS/Clients"));
+const Projects = lazy(() => import("./pages/CMS/Projects"));
+const Milestones = lazy(() => import("./pages/CMS/Milestones"));
+const Payments = lazy(() => import("./pages/CMS/Payments"));
+const Portfolios = lazy(() => import("./pages/CMS/Portfolios"));
 
 
 function AppContent() {
@@ -29,6 +31,7 @@ function AppContent() {
     <div className="flex flex-col min-h-screen">
       {!isCMSRoute && <Header />}
       <main className="flex-1">
+        <Suspense fallback={<div className="min-h-screen bg-primary flex items-center justify-center text-white">Loading...</div>}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/case-studies" element={<CaseStudies />} />
@@ -53,6 +56,7 @@ function AppContent() {
           <Route path="/cms/portfolios" element={<Portfolios />} />
           <Route path="/cms/portfolios/new" element={<Portfolios />} />
         </Routes>
+        </Suspense>
       </main>
       {!isCMSRoute && <Footer />}
       <ScrollToTop />
