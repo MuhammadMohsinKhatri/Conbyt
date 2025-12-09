@@ -22,9 +22,10 @@ if (!fs.existsSync(portfolioUploadsDir)) {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     // Determine upload directory based on upload type
+    // Check the request path/URL since req.route is not available at this point
     let uploadPath = uploadsDir;
     
-    if (req.route.path.includes('portfolio')) {
+    if (req.path?.includes('portfolio') || req.url?.includes('portfolio') || req.originalUrl?.includes('portfolio')) {
       uploadPath = portfolioUploadsDir;
     }
     

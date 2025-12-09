@@ -45,6 +45,10 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Serve uploaded files (both development and production)
+const uploadsPath = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath));
+
 // Routes
 app.use('/api/case-studies', caseStudiesRoutes);
 app.use('/api/blogs', blogsRoutes);
@@ -118,10 +122,6 @@ if (process.env.NODE_ENV === 'production') {
       console.error(`❌ Error reading dist folder:`, err);
     }
   }
-  
-  // Serve uploaded files
-  const uploadsPath = path.join(__dirname, 'uploads');
-  app.use('/uploads', express.static(uploadsPath));
   
   // Serve static files (CSS, JS, images, etc.)
   app.use(express.static(distPath, {

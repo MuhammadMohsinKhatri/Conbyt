@@ -1,4 +1,5 @@
 import express from 'express';
+import multer from 'multer';
 import upload from '../middleware/upload.js';
 import { authenticateAdmin } from '../middleware/auth.js';
 import fs from 'fs';
@@ -10,7 +11,22 @@ const router = express.Router();
 router.use(authenticateAdmin);
 
 // Upload portfolio image
-router.post('/portfolio-image', upload.single('image'), (req, res) => {
+router.post('/portfolio-image', (req, res, next) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      // Handle multer errors
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
+        }
+        return res.status(400).json({ error: err.message || 'File upload error' });
+      }
+      // Handle other errors (e.g., file type validation)
+      return res.status(400).json({ error: err.message || 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.' });
+    }
+    next();
+  });
+}, (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -18,6 +34,13 @@ router.post('/portfolio-image', upload.single('image'), (req, res) => {
 
     // Return the file path that can be used in the database
     const imageUrl = `/uploads/portfolios/${req.file.filename}`;
+    
+    console.log('✅ Portfolio image uploaded successfully:');
+    console.log('  - Filename:', req.file.filename);
+    console.log('  - Original name:', req.file.originalname);
+    console.log('  - Size:', req.file.size, 'bytes');
+    console.log('  - Image URL:', imageUrl);
+    console.log('  - File saved to:', req.file.path);
     
     res.json({
       success: true,

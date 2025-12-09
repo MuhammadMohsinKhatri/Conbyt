@@ -47,18 +47,26 @@ const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(errorData.error || `Upload failed with status ${response.status}`);
       }
 
       const result = await response.json();
       
+      if (!result.imageUrl) {
+        throw new Error('Server did not return image URL');
+      }
+      
       // Set the server file path as the image URL
+      console.log('Image uploaded successfully:', result.imageUrl);
       setImageUrl(result.imageUrl);
+      setPreview(result.imageUrl); // Update preview to use server URL
       onChange(result.imageUrl);
       setIsUploading(false);
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Error uploading image. Please try again.');
+      const errorMessage = error.message || 'Error uploading image. Please try again.';
+      alert(errorMessage);
       setPreview('');
       setIsUploading(false);
     }

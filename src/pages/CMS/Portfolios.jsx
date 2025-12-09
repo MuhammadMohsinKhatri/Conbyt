@@ -159,6 +159,9 @@ const Portfolios = () => {
         slug: formData.slug || generateSlug(formData.title)
       };
       
+      console.log('Submitting portfolio with data:', submitData);
+      console.log('Image URL being saved:', submitData.image_url);
+      
       if (editingPortfolio) {
         await updateAdminPortfolio(editingPortfolio.id, submitData, token);
       } else {
