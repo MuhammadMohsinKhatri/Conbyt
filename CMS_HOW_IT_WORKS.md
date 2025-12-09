@@ -456,7 +456,7 @@ Let's say you're writing a blog post about "AI Solutions":
 ✅ Keyword Density: 1.2% → Score: 100
 ✅ Headings: 1 H1, 3 H2s → Score: 100
 ✅ Links: 3 internal, 2 external → Score: 100
-✅ Images: 2 images, both have alt → Score: 100
+✅ Images: 1 image has alt → Score: 100
 ✅ Slug: Present → Score: 100
 ✅ OG Image: Present → Score: 100
 

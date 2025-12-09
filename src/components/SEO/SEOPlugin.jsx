@@ -93,7 +93,21 @@ const SEOPlugin = ({ formData, onUpdate }) => {
     if (!formData.content) return false;
     const images = (formData.content.match(/<img[^>]*>/gi) || []);
     if (images.length === 0) return true; // No images is okay
-    return images.every(img => img.includes('alt=')); // All images should have alt text
+    
+    // Check each image for proper alt text
+    const uploadedImages = images.filter(img => {
+      const srcMatch = img.match(/src=["']([^"']+)["']/i);
+      return srcMatch && srcMatch[1].trim() !== '';
+    });
+    
+    if (uploadedImages.length === 0) return true; // No uploaded images is okay
+    
+    // Check if all uploaded images have valid alt text
+    return uploadedImages.every(img => {
+      const altMatch = img.match(/alt=["']([^"']*)["']/i);
+      const altText = altMatch ? altMatch[1] : '';
+      return altText.trim() !== '' && altText.toLowerCase() !== 'image';
+    });
   };
 
   const checkReadability = () => {
@@ -503,9 +517,38 @@ const SEOPlugin = ({ formData, onUpdate }) => {
               </div>
             </div>
             <p className="text-white/60 text-xs">
-              {analysis.imageAlt
-                ? '✓ All images have alt text'
-                : '⚠ Add alt text to all images for accessibility and SEO'}
+              {(() => {
+                if (!formData.content) return '⚠ Add images with alt text for better SEO';
+                const images = (formData.content.match(/<img[^>]*>/gi) || []);
+                const uploadedImages = images.filter(img => {
+                  const srcMatch = img.match(/src=["']([^"']+)["']/i);
+                  return srcMatch && srcMatch[1].trim() !== '';
+                });
+                
+                if (uploadedImages.length === 0) return 'Consider adding images to make content more engaging.';
+                
+                const imagesWithAlt = uploadedImages.filter(img => {
+                  const altMatch = img.match(/alt=["']([^"']*)["']/i);
+                  const altText = altMatch ? altMatch[1] : '';
+                  return altText.trim() !== '' && altText.toLowerCase() !== 'image';
+                });
+                
+                if (imagesWithAlt.length === uploadedImages.length) {
+                  const count = uploadedImages.length;
+                  const keywordCheck = focusKeyword && uploadedImages.some(img => {
+                    const altMatch = img.match(/alt=["']([^"']*)["']/i);
+                    const altText = altMatch ? altMatch[1] : '';
+                    return altText.toLowerCase().includes(focusKeyword.toLowerCase());
+                  });
+                  
+                  if (focusKeyword && !keywordCheck) {
+                    return `✓ ${count} image${count !== 1 ? 's' : ''} have alt text, but add keyword "${focusKeyword}" for better SEO`;
+                  }
+                  return `✓ ${count} image${count !== 1 ? 's' : ''} ${count === 1 ? 'has' : 'have'} alt text`;
+                }
+                
+                return `⚠ ${uploadedImages.length - imagesWithAlt.length} of ${uploadedImages.length} image${uploadedImages.length !== 1 ? 's' : ''} missing alt text`;
+              })()}
             </p>
           </div>
 

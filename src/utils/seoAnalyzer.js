@@ -146,21 +146,66 @@ export const analyzeLinks = (content) => {
   };
 };
 
-export const analyzeImages = (content) => {
-  if (!content) return { count: 0, withAlt: 0, isValid: true };
+export const analyzeImages = (content, focusKeyword = '') => {
+  if (!content) return { count: 0, withAlt: 0, withKeyword: 0, isValid: true };
   
   const images = content.match(/<img[^>]*>/gi) || [];
-  const imagesWithAlt = images.filter(img => img.includes('alt=') && !img.match(/alt=["']\s*["']/i));
+  
+  // Parse images to check for alt text and keyword
+  const imageData = images.map(imgTag => {
+    // Extract alt text - handle both alt="..." and alt='...'
+    const altMatch = imgTag.match(/alt=["']([^"']*)["']/i);
+    const altText = altMatch ? altMatch[1] : '';
+    const hasAlt = altText.trim() !== '' && altText.toLowerCase() !== 'image';
+    
+    // Check if alt text contains keyword
+    const hasKeyword = focusKeyword && altText.toLowerCase().includes(focusKeyword.toLowerCase());
+    
+    // Check if image has src (is actually uploaded/displayed)
+    const srcMatch = imgTag.match(/src=["']([^"']+)["']/i);
+    const hasSrc = srcMatch && srcMatch[1].trim() !== '';
+    
+    return {
+      hasAlt,
+      hasKeyword,
+      hasSrc,
+      altText
+    };
+  });
+  
+  const imagesWithAlt = imageData.filter(img => img.hasAlt);
+  const imagesWithKeyword = focusKeyword ? imageData.filter(img => img.hasKeyword) : [];
+  const uploadedImages = imageData.filter(img => img.hasSrc);
+  
+  // Only count images that are actually uploaded (have src)
+  const validCount = uploadedImages.length;
+  const validWithAlt = uploadedImages.filter(img => img.hasAlt).length;
+  const validWithKeyword = uploadedImages.filter(img => img.hasKeyword).length;
+  
+  // Check if all uploaded images have alt text with keyword (if keyword provided)
+  const isValid = validCount === 0 || (validWithAlt === validCount && (!focusKeyword || validWithKeyword > 0));
+  
+  // Calculate score
+  let score = 100;
+  if (validCount > 0) {
+    score = (validWithAlt / validCount) * 100;
+    if (focusKeyword && validWithKeyword === 0 && validWithAlt > 0) {
+      score = score * 0.8; // Reduce score if keyword not in alt text
+    }
+  }
   
   return {
-    count: images.length,
-    withAlt: imagesWithAlt.length,
-    isValid: images.length === 0 || imagesWithAlt.length === images.length,
-    score: images.length === 0 ? 100 : (imagesWithAlt.length / images.length) * 100,
-    recommendation: images.length === 0
+    count: validCount,
+    withAlt: validWithAlt,
+    withKeyword: validWithKeyword,
+    isValid,
+    score: Math.round(score),
+    recommendation: validCount === 0
       ? 'Consider adding images to make content more engaging.'
-      : imagesWithAlt.length < images.length
-      ? `Add alt text to ${images.length - imagesWithAlt.length} image(s) for accessibility and SEO.`
+      : validWithAlt < validCount
+      ? `Add alt text to ${validCount - validWithAlt} image(s) for accessibility and SEO.`
+      : focusKeyword && validWithKeyword === 0
+      ? `Add focus keyword "${focusKeyword}" to image alt text for better SEO.`
       : 'All images have alt text. Perfect!'
   };
 };
@@ -172,7 +217,7 @@ export const calculateOverallSEOScore = (formData, focusKeyword = '') => {
   const keywordAnalysis = analyzeKeywordDensity(formData.content, focusKeyword);
   const headingAnalysis = analyzeHeadings(formData.content);
   const linkAnalysis = analyzeLinks(formData.content);
-  const imageAnalysis = analyzeImages(formData.content);
+  const imageAnalysis = analyzeImages(formData.content, focusKeyword);
   
   const weights = {
     title: 0.15,

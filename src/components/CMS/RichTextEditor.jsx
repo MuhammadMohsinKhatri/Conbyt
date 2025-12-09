@@ -16,8 +16,10 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
       let missingCount = 0;
       
       images.forEach(img => {
+        const src = img.getAttribute('src');
         const alt = img.getAttribute('alt');
-        if (!alt || alt.trim() === '' || alt === 'Image') {
+        // Only count images that are actually uploaded (have src) and missing alt text
+        if (src && src.trim() !== '' && (!alt || alt.trim() === '' || alt === 'Image' || alt.toLowerCase() === 'image')) {
           missingCount++;
         }
       });
@@ -140,7 +142,26 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
       .ql-snow a {
         color: #7c3aed;
         text-decoration: underline;
+        cursor: pointer;
       }
+      .ql-snow a:hover {
+        color: #9f7aea;
+        text-decoration: underline;
+      }
+      .ql-editor h1, .ql-editor h2, .ql-editor h3, .ql-editor h4, .ql-editor h5, .ql-editor h6 {
+        font-weight: bold;
+        margin-top: 1em;
+        margin-bottom: 0.5em;
+      }
+      .ql-editor h1 { font-size: 2em; }
+      .ql-editor h2 { font-size: 1.5em; }
+      .ql-editor h3 { font-size: 1.17em; }
+      .ql-editor h4 { font-size: 1em; }
+      .ql-editor h5 { font-size: 0.83em; }
+      .ql-editor h6 { font-size: 0.67em; }
+      .ql-size-small { font-size: 0.75em; }
+      .ql-size-large { font-size: 1.5em; }
+      .ql-size-huge { font-size: 2.5em; }
       .ql-snow .ql-tooltip {
         background: rgba(35, 35, 43, 0.95);
         border: 1px solid rgba(255, 255, 255, 0.2);
@@ -161,6 +182,23 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
   const handleChange = (content, delta, source, editor) => {
     onChange(content);
   };
+
+  // Make links clickable in the editor
+  useEffect(() => {
+    if (quillRef.current) {
+      const quill = quillRef.current.getEditor();
+      const editorElement = quill.root;
+      
+      // Enable link clicking
+      editorElement.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (link && link.href) {
+          e.preventDefault();
+          window.open(link.href, '_blank', 'noopener,noreferrer');
+        }
+      });
+    }
+  }, [value]);
 
   return (
     <div className="rich-text-editor-wrapper">
