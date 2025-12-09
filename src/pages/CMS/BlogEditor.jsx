@@ -247,7 +247,11 @@ const BlogEditor = () => {
                 onChange={(content) => setFormData({ ...formData, content })}
                 placeholder="Write your blog post content here..."
               />
-              <p className="text-white/50 text-xs mt-1">Rich text editor with formatting options</p>
+              <p className="text-white/50 text-xs mt-1">
+                Full-featured rich text editor: Headings (H1-H6), Text sizes (small, normal, large, huge), 
+                Bold, Italic, Underline, Strikethrough, Colors, Lists (ordered/bullet), Alignment, Links, 
+                Images, Blockquotes, Code blocks. HTML content is fully supported and preserved.
+              </p>
             </div>
           </div>
 

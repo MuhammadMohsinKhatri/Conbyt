@@ -727,12 +727,16 @@ const BlogDetail = () => {
           margin-bottom: 0.5em;
           color: white;
         }
-        .blog-content h1 { font-size: 2.5em; }
-        .blog-content h2 { font-size: 2em; }
-        .blog-content h3 { font-size: 1.75em; }
-        .blog-content h4 { font-size: 1.5em; }
-        .blog-content h5 { font-size: 1.25em; }
-        .blog-content h6 { font-size: 1em; }
+        .blog-content h1 { font-size: 2.5em; line-height: 1.2; }
+        .blog-content h2 { font-size: 2em; line-height: 1.3; }
+        .blog-content h3 { font-size: 1.75em; line-height: 1.4; }
+        .blog-content h4 { font-size: 1.5em; line-height: 1.4; }
+        .blog-content h5 { font-size: 1.25em; line-height: 1.5; }
+        .blog-content h6 { font-size: 1em; line-height: 1.5; }
+        /* Text size classes from Quill */
+        .blog-content .ql-size-small { font-size: 0.75em; }
+        .blog-content .ql-size-large { font-size: 1.5em; }
+        .blog-content .ql-size-huge { font-size: 2.5em; }
         .blog-content ul, .blog-content ol {
           margin: 1em 0;
           padding-left: 2em;
@@ -742,6 +746,31 @@ const BlogDetail = () => {
         }
         .blog-content p {
           margin: 1em 0;
+          line-height: 1.7;
+        }
+        .blog-content strong, .blog-content b {
+          font-weight: bold;
+        }
+        .blog-content em, .blog-content i {
+          font-style: italic;
+        }
+        .blog-content u {
+          text-decoration: underline;
+        }
+        .blog-content s, .blog-content strike {
+          text-decoration: line-through;
+        }
+        .blog-content [style*="text-align"] {
+          display: block;
+        }
+        .blog-content [style*="text-align: center"] {
+          text-align: center;
+        }
+        .blog-content [style*="text-align: right"] {
+          text-align: right;
+        }
+        .blog-content [style*="text-align: justify"] {
+          text-align: justify;
         }
         .blog-content img {
           max-width: 100%;
@@ -771,6 +800,18 @@ const BlogDetail = () => {
         .blog-content pre code {
           background: none;
           padding: 0;
+        }
+        /* Text colors and backgrounds from Quill */
+        .blog-content [style*="color"] {
+          /* Preserve inline color styles */
+        }
+        .blog-content [style*="background-color"] {
+          padding: 0.1em 0.2em;
+          border-radius: 3px;
+        }
+        /* Ensure proper spacing for all formatted elements */
+        .blog-content * {
+          max-width: 100%;
         }
       `}</style>
     </div>

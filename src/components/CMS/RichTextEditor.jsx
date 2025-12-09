@@ -78,6 +78,8 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
     },
     clipboard: {
       matchVisual: false,
+      // Allow pasting HTML content with proper formatting
+      preserveWhitespace: true
     }
   }), []);
 
@@ -88,7 +90,8 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
     'list', 'bullet',
     'align',
     'link', 'image',
-    'blockquote', 'code-block'
+    'blockquote', 'code-block',
+    'script', 'indent', 'direction'
   ];
 
   // Custom styles for dark theme
