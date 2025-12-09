@@ -48,6 +48,50 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Helper function to generate unique slug
+async function generateUniqueSlug(baseSlug) {
+  if (!baseSlug) return null;
+  
+  let slug = baseSlug;
+  let counter = 1;
+  
+  while (true) {
+    const [existing] = await pool.execute(
+      'SELECT id FROM portfolios WHERE slug = ?',
+      [slug]
+    );
+    
+    if (existing.length === 0) {
+      return slug;
+    }
+    
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
+
+// Helper function to generate unique slug excluding a specific ID
+async function generateUniqueSlugExcluding(baseSlug, excludeId) {
+  if (!baseSlug) return null;
+  
+  let slug = baseSlug;
+  let counter = 1;
+  
+  while (true) {
+    const [existing] = await pool.execute(
+      'SELECT id FROM portfolios WHERE slug = ? AND id != ?',
+      [slug, excludeId]
+    );
+    
+    if (existing.length === 0) {
+      return slug;
+    }
+    
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
+
 // Create new portfolio
 router.post('/', async (req, res) => {
   try {
@@ -69,6 +113,9 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Title is required' });
     }
 
+    // Generate unique slug if provided
+    const uniqueSlug = slug ? await generateUniqueSlug(slug) : null;
+
     const [result] = await pool.execute(
       `INSERT INTO portfolios (project_id, title, description, image_url, category, tech_stack, slug, featured, display_order, live_url, github_url)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -79,7 +126,7 @@ router.post('/', async (req, res) => {
         image_url || null,
         category || null,
         tech_stack ? JSON.stringify(tech_stack) : null,
-        slug || null,
+        uniqueSlug,
         featured || false,
         display_order || 0,
         live_url || null,
@@ -90,6 +137,7 @@ router.post('/', async (req, res) => {
     res.status(201).json({ 
       success: true, 
       id: result.insertId,
+      slug: uniqueSlug,
       message: 'Portfolio created successfully'
     });
   } catch (error) {
@@ -123,6 +171,20 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Title is required' });
     }
 
+    // Check if slug is being changed and if it conflicts with existing ones
+    let finalSlug = slug;
+    if (slug) {
+      const [existing] = await pool.execute(
+        'SELECT id FROM portfolios WHERE slug = ? AND id != ?',
+        [slug, id]
+      );
+      
+      if (existing.length > 0) {
+        // Generate unique slug excluding current record
+        finalSlug = await generateUniqueSlugExcluding(slug, id);
+      }
+    }
+
     await pool.execute(
       `UPDATE portfolios SET
         project_id = ?, title = ?, description = ?, image_url = ?,
@@ -136,7 +198,7 @@ router.put('/:id', async (req, res) => {
         image_url || null,
         category || null,
         tech_stack ? JSON.stringify(tech_stack) : null,
-        slug || null,
+        finalSlug || null,
         featured || false,
         display_order || 0,
         live_url || null,
@@ -145,7 +207,11 @@ router.put('/:id', async (req, res) => {
       ]
     );
 
-    res.json({ success: true, message: 'Portfolio updated successfully' });
+    res.json({ 
+      success: true, 
+      slug: finalSlug,
+      message: 'Portfolio updated successfully' 
+    });
   } catch (error) {
     console.error('Error updating portfolio:', error);
     if (error.code === 'ER_DUP_ENTRY') {

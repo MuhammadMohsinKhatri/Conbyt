@@ -49,10 +49,9 @@ router.post('/', async (req, res) => {
       content,
       image_url,
       category,
-      author_name,
-      author_avatar,
+      author,
       date,
-      read_time,
+      reading_time,
       slug,
       meta_title,
       meta_description,
@@ -70,14 +69,14 @@ router.post('/', async (req, res) => {
 
     const [result] = await pool.execute(
       `INSERT INTO blog_posts (
-        title, excerpt, content, image_url, category, author_name, author_avatar,
-        date, read_time, slug, meta_title, meta_description, meta_keywords,
+        title, excerpt, content, image_url, category, author,
+        date, reading_time, slug, meta_title, meta_description, meta_keywords,
         og_image, canonical_url, published, featured
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        title, excerpt || null, content, image_url || null, category || null,
-        author_name || null, author_avatar || null, date || new Date().toISOString().split('T')[0],
-        read_time || null, slug, meta_title || null, meta_description || null,
+        title, excerpt || '', content, image_url || null, category || '',
+        author || '', date || new Date().toISOString().split('T')[0],
+        reading_time || null, slug, meta_title || null, meta_description || null,
         meta_keywords || null, og_image || null, canonical_url || null,
         published || false, featured || false
       ]
@@ -107,10 +106,9 @@ router.put('/:id', async (req, res) => {
       content,
       image_url,
       category,
-      author_name,
-      author_avatar,
+      author,
       date,
-      read_time,
+      reading_time,
       slug,
       meta_title,
       meta_description,
@@ -129,14 +127,14 @@ router.put('/:id', async (req, res) => {
     await pool.execute(
       `UPDATE blog_posts SET
         title = ?, excerpt = ?, content = ?, image_url = ?, category = ?,
-        author_name = ?, author_avatar = ?, date = ?, read_time = ?, slug = ?,
+        author = ?, date = ?, reading_time = ?, slug = ?,
         meta_title = ?, meta_description = ?, meta_keywords = ?,
         og_image = ?, canonical_url = ?, published = ?, featured = ?
       WHERE id = ?`,
       [
-        title, excerpt || null, content, image_url || null, category || null,
-        author_name || null, author_avatar || null, date || new Date().toISOString().split('T')[0],
-        read_time || null, slug, meta_title || null, meta_description || null,
+        title, excerpt || '', content, image_url || null, category || '',
+        author || '', date || new Date().toISOString().split('T')[0],
+        reading_time || null, slug, meta_title || null, meta_description || null,
         meta_keywords || null, og_image || null, canonical_url || null,
         published || false, featured || false, id
       ]
