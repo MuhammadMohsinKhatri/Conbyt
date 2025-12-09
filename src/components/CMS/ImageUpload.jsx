@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaUpload, FaTimes, FaImage } from 'react-icons/fa';
 
-const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or paste image URL", accept = "image/*" }) => {
+const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or paste image URL", accept = "image/*", uploadEndpoint = "/api/upload/image" }) => {
   const [imageUrl, setImageUrl] = useState(value || '');
   const [preview, setPreview] = useState(value || '');
   const [isUploading, setIsUploading] = useState(false);
@@ -38,7 +38,7 @@ const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or
       formData.append('image', file);
 
       const token = localStorage.getItem('cms_token');
-      const response = await fetch('/api/upload/portfolio-image', {
+      const response = await fetch(uploadEndpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -199,13 +199,13 @@ const ImageUpload = ({ value, onChange, label, placeholder = "Click to upload or
       <div className="relative">
         <input
           ref={urlInputRef}
-          type="url"
+          type="text"
           value={imageUrl}
           onChange={(e) => handleUrlChange(e.target.value)}
           placeholder={placeholder}
           className="w-full px-4 py-3 bg-primary/80 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-accent"
         />
-        <p className="text-white/50 text-xs mt-1">Or enter image URL</p>
+        <p className="text-white/50 text-xs mt-1">Or enter image URL or file path</p>
       </div>
     </div>
   );

@@ -368,6 +368,7 @@ const Portfolios = () => {
                   value={formData.image_url}
                   onChange={(value) => setFormData({ ...formData, image_url: value })}
                   placeholder="Upload portfolio image or paste URL"
+                  uploadEndpoint="/api/upload/portfolio-image"
                 />
               </div>
               <div>
