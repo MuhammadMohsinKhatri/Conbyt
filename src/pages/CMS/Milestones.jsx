@@ -1,7 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaTasks, FaArrowLeft } from 'react-icons/fa';
+import RichTextEditor from '../../components/CMS/RichTextEditor';
 import { fetchAdminMilestones, fetchAdminProjects, deleteAdminMilestone, createAdminMilestone, updateAdminMilestone } from '../../utils/api.js';
+
+// Helper function to strip HTML tags for preview
+const stripHtml = (html) => {
+  if (!html) return '';
+  if (!html.includes('<')) return html;
+  const tmp = document.createElement('DIV');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+};
 
 const Milestones = () => {
   const [milestones, setMilestones] = useState([]);
@@ -238,7 +248,9 @@ const Milestones = () => {
                         <div className="text-white font-medium">{milestone.title}</div>
                         {milestone.description && (
                           <div className="text-white/60 text-sm mt-1">
-                            {milestone.description.substring(0, 50)}...
+                            {milestone.description.includes('<') 
+                              ? stripHtml(milestone.description).substring(0, 50) + '...'
+                              : milestone.description.substring(0, 50) + (milestone.description.length > 50 ? '...' : '')}
                           </div>
                         )}
                       </td>
@@ -319,11 +331,10 @@ const Milestones = () => {
               </div>
               <div>
                 <label className="block text-white/70 mb-2">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white focus:outline-none focus:border-accent"
-                  rows="3"
+                <RichTextEditor
+                  value={formData.description || ''}
+                  onChange={(content) => setFormData({ ...formData, description: content })}
+                  placeholder="Enter milestone description with rich formatting..."
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">

@@ -2,7 +2,17 @@ import React, { useEffect, useState, memo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaFolderOpen, FaArrowLeft, FaTimes } from 'react-icons/fa';
 import ImageUpload from '../../components/CMS/ImageUpload';
+import RichTextEditor from '../../components/CMS/RichTextEditor';
 import { fetchAdminPortfolios, fetchAdminProjects, deleteAdminPortfolio, createAdminPortfolio, updateAdminPortfolio } from '../../utils/api.js';
+
+// Helper function to strip HTML tags for preview
+const stripHtml = (html) => {
+  if (!html) return '';
+  if (!html.includes('<')) return html;
+  const tmp = document.createElement('DIV');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+};
 
 // Component to handle portfolio image display with error handling
 const PortfolioImage = ({ imageUrl, title }) => {
@@ -307,9 +317,13 @@ const Portfolios = () => {
                       <span className="px-2 py-1 bg-accent/20 text-accent text-xs rounded">Featured</span>
                     )}
                   </div>
-                  <p className="text-white/70 text-sm mb-4 line-clamp-2">
-                    {portfolio.description || 'No description'}
-                  </p>
+                  <div className="text-white/70 text-sm mb-4 line-clamp-2">
+                    {portfolio.description 
+                      ? (portfolio.description.includes('<') 
+                          ? stripHtml(portfolio.description).substring(0, 100) + '...'
+                          : portfolio.description.substring(0, 100) + (portfolio.description.length > 100 ? '...' : ''))
+                      : 'No description'}
+                  </div>
                   <div className="flex items-center justify-between">
                     <span className="text-white/60 text-sm">{portfolio.category || 'Uncategorized'}</span>
                     <div className="flex gap-2">
@@ -402,11 +416,10 @@ const Portfolios = () => {
               </div>
               <div>
                 <label className="block text-white/70 mb-2">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white focus:outline-none focus:border-accent"
-                  rows="4"
+                <RichTextEditor
+                  value={formData.description || ''}
+                  onChange={(content) => setFormData({ ...formData, description: content })}
+                  placeholder="Enter portfolio description with rich formatting..."
                 />
               </div>
               <div>
@@ -549,9 +562,16 @@ const Portfolios = () => {
             <div className="mb-4">
               <PortfolioImage imageUrl={selectedPortfolio.image_url} title={selectedPortfolio.title} />
             </div>
-            <p className="text-white/80 mb-4 whitespace-pre-line">
-              {selectedPortfolio.description || 'No description provided.'}
-            </p>
+            <div 
+              className="text-white/80 mb-4 prose prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ 
+                __html: selectedPortfolio.description 
+                  ? (selectedPortfolio.description.includes('<') 
+                      ? selectedPortfolio.description 
+                      : `<p>${selectedPortfolio.description}</p>`)
+                  : '<p>No description provided.</p>'
+              }}
+            />
             <div className="flex flex-wrap gap-2 mb-4">
               {normalizedSelectedTechStack.map((tech, i) => (
                 <span key={i} className="px-3 py-1 bg-accent/20 border border-accent/30 rounded-lg text-accent text-sm">

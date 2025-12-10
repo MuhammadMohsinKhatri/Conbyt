@@ -1,8 +1,18 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaProjectDiagram, FaArrowLeft, FaSearch, FaDownload, FaFileCsv, FaFileExcel, FaFilter, FaTimes } from 'react-icons/fa';
+import RichTextEditor from '../../components/CMS/RichTextEditor';
 import { fetchAdminProjects, fetchAdminClients, deleteAdminProject, createAdminProject, updateAdminProject } from '../../utils/api.js';
 import { filterData, downloadCSV, downloadExcel } from '../../utils/exportUtils.js';
+
+// Helper function to strip HTML tags for preview
+const stripHtml = (html) => {
+  if (!html) return '';
+  if (!html.includes('<')) return html;
+  const tmp = document.createElement('DIV');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+};
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -413,7 +423,9 @@ const Projects = () => {
                         <div className="text-white font-medium text-sm sm:text-base">{project.title}</div>
                         {project.description && (
                           <div className="text-white/60 text-xs sm:text-sm mt-1 line-clamp-1">
-                            {project.description.substring(0, 50)}...
+                            {project.description.includes('<') 
+                              ? stripHtml(project.description).substring(0, 50) + '...'
+                              : project.description.substring(0, 50) + (project.description.length > 50 ? '...' : '')}
                           </div>
                         )}
                       </td>
@@ -513,11 +525,10 @@ const Projects = () => {
               </div>
               <div>
                 <label className="block text-white/70 mb-2">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white focus:outline-none focus:border-accent"
-                  rows="4"
+                <RichTextEditor
+                  value={formData.description || ''}
+                  onChange={(content) => setFormData({ ...formData, description: content })}
+                  placeholder="Enter project description with rich formatting..."
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">

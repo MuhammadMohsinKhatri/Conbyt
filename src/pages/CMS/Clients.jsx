@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaUsers, FaArrowLeft, FaSearch, FaDownload, FaFileCsv, FaFileExcel, FaFilter } from 'react-icons/fa';
+import RichTextEditor from '../../components/CMS/RichTextEditor';
 import { fetchAdminClients, deleteAdminClient } from '../../utils/api.js';
 import { filterData, downloadCSV, downloadExcel } from '../../utils/exportUtils.js';
 
@@ -433,20 +434,18 @@ const Clients = () => {
               </div>
               <div>
                 <label className="block text-white/70 mb-2">Address</label>
-                <textarea
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white focus:outline-none focus:border-accent"
-                  rows="2"
+                <RichTextEditor
+                  value={formData.address || ''}
+                  onChange={(content) => setFormData({ ...formData, address: content })}
+                  placeholder="Enter client address with rich formatting..."
                 />
               </div>
               <div>
                 <label className="block text-white/70 mb-2">Notes</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white focus:outline-none focus:border-accent"
-                  rows="3"
+                <RichTextEditor
+                  value={formData.notes || ''}
+                  onChange={(content) => setFormData({ ...formData, notes: content })}
+                  placeholder="Enter client notes with rich formatting..."
                 />
               </div>
               <div>
