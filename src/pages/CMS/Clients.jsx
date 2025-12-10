@@ -141,11 +141,24 @@ const Clients = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    
     try {
       const token = localStorage.getItem('cms_token');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
+        navigate('/cms/login');
+        return;
+      }
+
+      if (!formData.name || !formData.name.trim()) {
+        setError('Name is required');
+        return;
+      }
+
       const { createAdminClient, updateAdminClient } = await import('../../utils/api.js');
       
-      if (editingClient) {
+      if (editingClient && editingClient.id) {
         await updateAdminClient(editingClient.id, formData, token);
       } else {
         await createAdminClient(formData, token);
@@ -164,7 +177,8 @@ const Clients = () => {
       });
       fetchClients();
     } catch (error) {
-      alert('Error saving client: ' + error.message);
+      console.error('Error saving client:', error);
+      setError(error.message || 'Failed to save client. Please try again.');
     }
   };
 
@@ -392,6 +406,11 @@ const Clients = () => {
             <h2 className="text-2xl font-bold text-white mb-6">
               {editingClient ? 'Edit Client' : 'New Client'}
             </h2>
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4">
+                <p className="text-red-300 text-sm">{error}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-white/70 mb-2">Name *</label>

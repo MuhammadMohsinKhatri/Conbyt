@@ -143,7 +143,20 @@ const BlogEditor = () => {
               <FaTimes className="inline mr-2" /> Cancel
             </button>
             <button
-              onClick={handleSubmit}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                // Trigger form submission
+                const form = document.querySelector('form');
+                if (form) {
+                  // Create a submit event
+                  const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                  form.dispatchEvent(submitEvent);
+                } else {
+                  // Fallback: call handleSubmit directly
+                  handleSubmit(e);
+                }
+              }}
               disabled={loading}
               className="px-6 py-2 bg-gradient-to-r from-accent to-accent2 text-white font-bold rounded-lg hover:opacity-90 transition disabled:opacity-50"
             >

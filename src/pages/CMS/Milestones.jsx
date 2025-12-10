@@ -110,15 +110,33 @@ const Milestones = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    
     try {
       const token = localStorage.getItem('cms_token');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
+        navigate('/cms/login');
+        return;
+      }
+
+      if (!formData.title || !formData.title.trim()) {
+        setError('Title is required');
+        return;
+      }
+
+      if (!formData.project_id) {
+        setError('Project is required');
+        return;
+      }
+
       const submitData = {
         ...formData,
         project_id: parseInt(formData.project_id),
-        order_index: parseInt(formData.order_index)
+        order_index: parseInt(formData.order_index) || 0
       };
       
-      if (editingMilestone) {
+      if (editingMilestone && editingMilestone.id) {
         await updateAdminMilestone(editingMilestone.id, submitData, token);
       } else {
         await createAdminMilestone(submitData, token);
@@ -136,7 +154,8 @@ const Milestones = () => {
       });
       fetchMilestones();
     } catch (error) {
-      alert('Error saving milestone: ' + error.message);
+      console.error('Error saving milestone:', error);
+      setError(error.message || 'Failed to save milestone. Please try again.');
     }
   };
 
@@ -302,6 +321,11 @@ const Milestones = () => {
             <h2 className="text-2xl font-bold text-white mb-6">
               {editingMilestone ? 'Edit Milestone' : 'New Milestone'}
             </h2>
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4">
+                <p className="text-red-300 text-sm">{error}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-white/70 mb-2">Project *</label>

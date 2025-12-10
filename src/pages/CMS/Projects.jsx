@@ -181,14 +181,28 @@ const Projects = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    
     try {
       const token = localStorage.getItem('cms_token');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
+        navigate('/cms/login');
+        return;
+      }
+
+      if (!formData.title || !formData.title.trim()) {
+        setError('Title is required');
+        return;
+      }
+
       const submitData = {
         ...formData,
-        budget: formData.budget ? parseFloat(formData.budget) : null
+        budget: formData.budget ? parseFloat(formData.budget) : null,
+        tech_stack: Array.isArray(formData.tech_stack) ? formData.tech_stack : []
       };
       
-      if (editingProject) {
+      if (editingProject && editingProject.id) {
         await updateAdminProject(editingProject.id, submitData, token);
       } else {
         await createAdminProject(submitData, token);
@@ -210,7 +224,8 @@ const Projects = () => {
       setTechStackInput('');
       fetchData();
     } catch (error) {
-      alert('Error saving project: ' + error.message);
+      console.error('Error saving project:', error);
+      setError(error.message || 'Failed to save project. Please try again.');
     }
   };
 
@@ -496,6 +511,11 @@ const Projects = () => {
                 <FaTimes className="text-xl" />
               </button>
             </div>
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4">
+                <p className="text-red-300 text-sm">{error}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-white/70 mb-2">Client *</label>

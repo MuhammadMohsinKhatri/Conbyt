@@ -183,19 +183,33 @@ const Portfolios = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    
     try {
       const token = localStorage.getItem('cms_token');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
+        navigate('/cms/login');
+        return;
+      }
+
+      if (!formData.title || !formData.title.trim()) {
+        setError('Title is required');
+        return;
+      }
+
       const submitData = {
         ...formData,
         project_id: formData.project_id ? parseInt(formData.project_id) : null,
         display_order: parseInt(formData.display_order) || 0,
-        slug: formData.slug || generateSlug(formData.title)
+        slug: formData.slug || generateSlug(formData.title),
+        tech_stack: Array.isArray(formData.tech_stack) ? formData.tech_stack : []
       };
       
       console.log('Submitting portfolio with data:', submitData);
-      console.log('Image URL being saved:', submitData.image_url);
+      console.log('Editing portfolio:', editingPortfolio);
       
-      if (editingPortfolio) {
+      if (editingPortfolio && editingPortfolio.id) {
         await updateAdminPortfolio(editingPortfolio.id, submitData, token);
       } else {
         await createAdminPortfolio(submitData, token);
@@ -219,7 +233,8 @@ const Portfolios = () => {
       setTechStackInput('');
       fetchData();
     } catch (error) {
-      alert('Error saving portfolio: ' + error.message);
+      console.error('Error saving portfolio:', error);
+      setError(error.message || 'Failed to save portfolio. Please try again.');
     }
   };
 
@@ -374,6 +389,11 @@ const Portfolios = () => {
             <h2 className="text-2xl font-bold text-white mb-6">
               {editingPortfolio ? 'Edit Portfolio' : 'New Portfolio'}
             </h2>
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4">
+                <p className="text-red-300 text-sm">{error}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-white/70 mb-2">Project (Optional)</label>
