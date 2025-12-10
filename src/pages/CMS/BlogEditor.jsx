@@ -38,13 +38,20 @@ const BlogEditor = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('cms_token');
+    console.log('BlogEditor useEffect - token exists:', !!token, 'isEdit:', isEdit, 'id:', id);
+    
     if (!token) {
+      console.log('No token found, redirecting to login');
       navigate('/cms/login');
       return;
     }
 
-    if (isEdit) {
+    if (isEdit && id) {
+      console.log('Fetching blog for edit mode');
       fetchBlog();
+    } else if (isEdit && !id) {
+      console.error('Edit mode but no ID provided');
+      setError('No blog ID provided for editing');
     }
   }, [id, isEdit, navigate]);
 
@@ -76,14 +83,24 @@ const BlogEditor = () => {
   const fetchBlog = async () => {
     try {
       const token = localStorage.getItem('cms_token');
-      const data = await fetchAdminBlog(id, token);
-      setFormData(data);
-    } catch (error) {
-      if (error.message && (error.message.includes('401') || error.message.includes('Token'))) {
+      if (!token) {
         navigate('/cms/login');
         return;
       }
-      setError('Failed to fetch blog post');
+      
+      console.log('Fetching blog with ID:', id);
+      const data = await fetchAdminBlog(id, token);
+      console.log('Blog data received:', data);
+      setFormData(data);
+    } catch (error) {
+      console.error('Error fetching blog:', error);
+      if (error.message && (error.message.includes('401') || error.message.includes('Token'))) {
+        localStorage.removeItem('cms_token');
+        localStorage.removeItem('cms_user');
+        navigate('/cms/login');
+        return;
+      }
+      setError('Failed to fetch blog post: ' + error.message);
     }
   };
 
@@ -127,13 +144,16 @@ const BlogEditor = () => {
     }));
   };
 
+  // Debug logging
+  console.log('BlogEditor render - isEdit:', isEdit, 'id:', id, 'formData:', formData, 'error:', error);
+
   return (
     <div className="min-h-screen bg-primary py-8">
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-white">
-            {isEdit ? 'Edit Blog Post' : 'Create New Blog Post'}
+            {isEdit ? `Edit Blog Post ${id ? `(ID: ${id})` : ''}` : 'Create New Blog Post'}
           </h1>
           <div className="flex gap-3">
             <button

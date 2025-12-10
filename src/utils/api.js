@@ -8,7 +8,7 @@ const getApiBaseUrl = () => {
   if (import.meta.env.PROD) {
     return '/api';
   }
-  // In development, use localhost
+  // In development, use localhost (server runs on port 5000)
   return 'http://localhost:5000/api';
 };
 
@@ -111,13 +111,25 @@ export const fetchAdminBlogs = async (token) => {
 };
 
 export const fetchAdminBlog = async (id, token) => {
+  console.log('API: Fetching blog with ID:', id, 'URL:', `${API_BASE_URL}/admin/blogs/${id}`);
+  
   const response = await fetch(`${API_BASE_URL}/admin/blogs/${id}`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
   });
-  if (!response.ok) throw new Error('Failed to fetch blog');
-  return response.json();
+  
+  console.log('API: Response status:', response.status, response.statusText);
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('API: Error response:', errorText);
+    throw new Error(`Failed to fetch blog: ${response.status} ${response.statusText}`);
+  }
+  
+  const data = await response.json();
+  console.log('API: Blog data received:', data);
+  return data;
 };
 
 export const createAdminBlog = async (blogData, token) => {

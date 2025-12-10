@@ -226,7 +226,10 @@ const Footer = () => (
           <div>
             <h4 className="text-white text-sm font-medium mb-3">Follow Us</h4>
             <div className="flex gap-3">
-              <a href="https://www.linkedin.com/company/conbyt" className="w-8 h-8 bg-surface/20 hover:bg-accent2 transition-colors rounded flex items-center justify-center text-white">
+              <a href="https://www.facebook.com/profile.php?id=61584143290358" target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-surface/20 hover:bg-accent2 transition-colors rounded flex items-center justify-center text-white">
+                <FaFacebookF className="text-sm" />
+              </a>
+              <a href="https://www.linkedin.com/company/conbyt" target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-surface/20 hover:bg-accent2 transition-colors rounded flex items-center justify-center text-white">
                 <FaLinkedinIn className="text-sm" />
               </a>
               <a href="#" className="w-8 h-8 bg-surface/20 hover:bg-accent transition-colors rounded flex items-center justify-center text-white">
