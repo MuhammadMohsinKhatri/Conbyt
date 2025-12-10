@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaUsers, FaArrowLeft, FaSearch, FaDownload, FaFileCsv, FaFileExcel, FaFilter } from 'react-icons/fa';
 import RichTextEditor from '../../components/CMS/RichTextEditor';
 import { fetchAdminClients, deleteAdminClient } from '../../utils/api.js';
-import { filterData, downloadCSV, downloadExcel } from '../../utils/exportUtils.js';
+import { filterData, downloadCSV, downloadExcel, createSearchCache } from '../../utils/exportUtils.js';
 
 const Clients = () => {
   const [clients, setClients] = useState([]);
@@ -56,15 +56,22 @@ const Clients = () => {
     }
   };
 
-  // Filter clients based on search and filters
+  // Create search index cache for better performance
+  const searchCache = useMemo(() => {
+    if (allClients.length === 0) return null;
+    return createSearchCache(allClients, ['name', 'email', 'phone', 'company', 'address', 'notes']);
+  }, [allClients]);
+
+  // Filter clients based on search and filters using FlexSearch
   const filteredClients = useMemo(() => {
     return filterData(
       allClients,
       searchTerm,
       ['name', 'email', 'phone', 'company', 'address', 'notes'],
-      filters
+      filters,
+      searchCache
     );
-  }, [allClients, searchTerm, filters]);
+  }, [allClients, searchTerm, filters, searchCache]);
 
   // Update displayed clients when filters change
   useEffect(() => {

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaProjectDiagram, FaArrowLeft, FaSearch, FaDownload, FaFileCsv, FaFileExcel, FaFilter, FaTimes } from 'react-icons/fa';
 import RichTextEditor from '../../components/CMS/RichTextEditor';
 import { fetchAdminProjects, fetchAdminClients, deleteAdminProject, createAdminProject, updateAdminProject } from '../../utils/api.js';
-import { filterData, downloadCSV, downloadExcel } from '../../utils/exportUtils.js';
+import { filterData, downloadCSV, downloadExcel, createSearchCache } from '../../utils/exportUtils.js';
 
 // Helper function to strip HTML tags for preview
 const stripHtml = (html) => {
@@ -75,15 +75,22 @@ const Projects = () => {
     }
   };
 
-  // Filter projects based on search and filters
+  // Create search index cache for better performance
+  const searchCache = useMemo(() => {
+    if (allProjects.length === 0) return null;
+    return createSearchCache(allProjects, ['title', 'description', 'category', 'client_name', 'client_company']);
+  }, [allProjects]);
+
+  // Filter projects based on search and filters using FlexSearch
   const filteredProjects = useMemo(() => {
     return filterData(
       allProjects,
       searchTerm,
       ['title', 'description', 'category', 'client_name', 'client_company'],
-      filters
+      filters,
+      searchCache
     );
-  }, [allProjects, searchTerm, filters]);
+  }, [allProjects, searchTerm, filters, searchCache]);
 
   // Update displayed projects when filters change
   useEffect(() => {

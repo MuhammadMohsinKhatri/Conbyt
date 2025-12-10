@@ -2,6 +2,8 @@
  * Export utility functions for CSV and Excel export
  */
 
+import { filterDataWithFlexSearch, createSearchIndexCache } from './flexSearchUtils.js';
+
 /**
  * Convert data array to CSV format
  * @param {Array} data - Array of objects to export
@@ -90,42 +92,28 @@ export const downloadExcel = (data, headers, filename = 'export.xlsx') => {
 };
 
 /**
- * Filter data based on search term and filters
+ * Filter data based on search term and filters using FlexSearch
  * @param {Array} data - Array of data to filter
  * @param {string} searchTerm - Search term to filter by
  * @param {Array} searchFields - Array of field names to search in
  * @param {Object} filters - Object with filter criteria
+ * @param {Object} searchIndexCache - Optional cached search index (for performance)
  * @returns {Array} Filtered data
  */
-export const filterData = (data, searchTerm = '', searchFields = [], filters = {}) => {
-  let filtered = [...data];
+export const filterData = (data, searchTerm = '', searchFields = [], filters = {}, searchIndexCache = null) => {
+  // Use FlexSearch for fast, flexible full-text search
+  return filterDataWithFlexSearch(data, searchTerm, searchFields, filters, searchIndexCache);
+};
 
-  // Apply search filter
-  if (searchTerm && searchFields.length > 0) {
-    const searchLower = searchTerm.toLowerCase();
-    filtered = filtered.filter(item => {
-      return searchFields.some(field => {
-        const value = getNestedValue(item, field);
-        return value && String(value).toLowerCase().includes(searchLower);
-      });
-    });
-  }
-
-  // Apply other filters
-  Object.keys(filters).forEach(key => {
-    const filterValue = filters[key];
-    if (filterValue !== null && filterValue !== undefined && filterValue !== '') {
-      filtered = filtered.filter(item => {
-        const itemValue = getNestedValue(item, key);
-        if (Array.isArray(filterValue)) {
-          return filterValue.includes(itemValue);
-        }
-        return String(itemValue).toLowerCase() === String(filterValue).toLowerCase();
-      });
-    }
-  });
-
-  return filtered;
+/**
+ * Create a search index cache for better performance
+ * Use this when you need to search the same data multiple times
+ * @param {Array} data - Data to index
+ * @param {Array} searchFields - Fields to search
+ * @returns {Object} Cache object
+ */
+export const createSearchCache = (data, searchFields) => {
+  return createSearchIndexCache(data, searchFields);
 };
 
 /**
