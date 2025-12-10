@@ -87,6 +87,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const {
+      project_id,
       title,
       description,
       status,
@@ -101,10 +102,11 @@ router.put('/:id', async (req, res) => {
 
     await pool.execute(
       `UPDATE milestones SET
-        title = ?, description = ?, status = ?,
+        project_id = ?, title = ?, description = ?, status = ?,
         due_date = ?, completed_date = ?, order_index = ?
       WHERE id = ?`,
       [
+        project_id || null,
         title,
         description || null,
         status || 'pending',

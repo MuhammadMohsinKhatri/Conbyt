@@ -129,6 +129,10 @@ router.put('/:id', async (req, res) => {
       notes
     } = req.body;
 
+    if (!project_id) {
+      return res.status(400).json({ error: 'Project ID is required' });
+    }
+
     if (!amount) {
       return res.status(400).json({ error: 'Amount is required' });
     }

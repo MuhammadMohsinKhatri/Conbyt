@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaEye, FaSignOutAlt, FaFileAlt, FaArrowLeft, FaSearch, FaDownload, FaFileCsv, FaFileExcel, FaFilter } from 'react-icons/fa';
 import { fetchAdminBlogs, deleteAdminBlog } from '../../utils/api.js';
-import { filterData, downloadCSV, downloadExcel } from '../../utils/exportUtils.js';
+import { filterData, downloadCSV, downloadExcel, createSearchCache } from '../../utils/exportUtils.js';
 
 const Blogs = () => {
   const [blogs, setBlogs] = useState([]);
@@ -45,23 +45,28 @@ const Blogs = () => {
     }
   };
 
-  // Filter blogs based on search and filters
+  // Create search index cache for better performance
+  const searchCache = useMemo(() => {
+    if (allBlogs.length === 0) return null;
+    return createSearchCache(allBlogs, ['title', 'content', 'category', 'slug']);
+  }, [allBlogs]);
+
+  // Filter blogs based on search and filters using FlexSearch
   const filteredBlogs = useMemo(() => {
-    let filtered = filterData(
+    // Build filters object including published status
+    const allFilters = {
+      category: filters.category,
+      published: filters.published !== '' ? filters.published : undefined
+    };
+    
+    return filterData(
       allBlogs,
       searchTerm,
       ['title', 'content', 'category', 'slug'],
-      { category: filters.category }
+      allFilters,
+      searchCache
     );
-
-    // Filter by published status
-    if (filters.published !== '') {
-      const isPublished = filters.published === 'true';
-      filtered = filtered.filter(blog => blog.published === isPublished);
-    }
-
-    return filtered;
-  }, [allBlogs, searchTerm, filters]);
+  }, [allBlogs, searchTerm, filters, searchCache]);
 
   // Update displayed blogs when filters change
   useEffect(() => {

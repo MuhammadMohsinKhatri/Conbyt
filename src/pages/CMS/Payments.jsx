@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaDollarSign, FaArrowLeft, FaSearch, FaDownload, FaFileCsv, FaFileExcel, FaFilter } from 'react-icons/fa';
 import { fetchAdminPayments, fetchAdminProjects, fetchAdminMilestones, deleteAdminPayment, createAdminPayment, updateAdminPayment } from '../../utils/api.js';
-import { filterData, downloadCSV, downloadExcel } from '../../utils/exportUtils.js';
+import { filterData, downloadCSV, downloadExcel, createSearchCache } from '../../utils/exportUtils.js';
 
 const Payments = () => {
   const [payments, setPayments] = useState([]);
@@ -72,15 +72,22 @@ const Payments = () => {
     }
   };
 
-  // Filter payments based on search and filters
+  // Create search index cache for better performance
+  const searchCache = useMemo(() => {
+    if (allPayments.length === 0) return null;
+    return createSearchCache(allPayments, ['project_title', 'milestone_title', 'invoice_number', 'notes', 'payment_method']);
+  }, [allPayments]);
+
+  // Filter payments based on search and filters using FlexSearch
   const filteredPayments = useMemo(() => {
     return filterData(
       allPayments,
       searchTerm,
       ['project_title', 'milestone_title', 'invoice_number', 'notes', 'payment_method'],
-      filters
+      filters,
+      searchCache
     );
-  }, [allPayments, searchTerm, filters]);
+  }, [allPayments, searchTerm, filters, searchCache]);
 
   // Update displayed payments when filters change
   useEffect(() => {
@@ -170,8 +177,26 @@ const Payments = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    
     try {
       const token = localStorage.getItem('cms_token');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
+        navigate('/cms/login');
+        return;
+      }
+
+      if (!formData.project_id || !formData.project_id.trim()) {
+        setError('Project is required');
+        return;
+      }
+
+      if (!formData.amount || !formData.amount.trim() || parseFloat(formData.amount) <= 0) {
+        setError('Amount is required and must be greater than 0');
+        return;
+      }
+
       const submitData = {
         ...formData,
         project_id: parseInt(formData.project_id),
@@ -179,7 +204,7 @@ const Payments = () => {
         amount: parseFloat(formData.amount)
       };
       
-      if (editingPayment) {
+      if (editingPayment && editingPayment.id) {
         await updateAdminPayment(editingPayment.id, submitData, token);
       } else {
         await createAdminPayment(submitData, token);
@@ -199,7 +224,8 @@ const Payments = () => {
       });
       fetchData();
     } catch (error) {
-      alert('Error saving payment: ' + error.message);
+      console.error('Error saving payment:', error);
+      setError(error.message || 'Failed to save payment. Please try again.');
     }
   };
 
@@ -498,6 +524,11 @@ const Payments = () => {
             <h2 className="text-2xl font-bold text-white mb-6">
               {editingPayment ? 'Edit Payment' : 'New Payment'}
             </h2>
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4">
+                <p className="text-red-300 text-sm">{error}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-white/70 mb-2">Project *</label>

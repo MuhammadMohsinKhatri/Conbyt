@@ -11,6 +11,7 @@
     "deploy:build": "npm run build && echo 'Frontend build complete. Upload dist/ folder to Hostinger.'"
   },
   "dependencies": {
+    "flexsearch": "^0.8.212",
     "framer-motion": "^12.23.3",
     "react": "^19.1.0",
     "react-countup": "^6.5.3",

@@ -26,6 +26,12 @@ export default defineConfig({
   resolve: {
     // Ensure case-sensitive imports work correctly
     preserveSymlinks: false,
-    dedupe: []
+    dedupe: [],
+    alias: {
+      // Ensure flexsearch resolves correctly
+    }
+  },
+  optimizeDeps: {
+    include: ['flexsearch']
   }
 })

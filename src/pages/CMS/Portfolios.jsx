@@ -1,9 +1,10 @@
-import React, { useEffect, useState, memo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaFolderOpen, FaArrowLeft, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaFolderOpen, FaArrowLeft, FaTimes, FaSearch, FaFilter } from 'react-icons/fa';
 import ImageUpload from '../../components/CMS/ImageUpload';
 import RichTextEditor from '../../components/CMS/RichTextEditor';
 import { fetchAdminPortfolios, fetchAdminProjects, deleteAdminPortfolio, createAdminPortfolio, updateAdminPortfolio } from '../../utils/api.js';
+import { filterData, createSearchCache } from '../../utils/exportUtils.js';
 
 // Helper function to strip HTML tags for preview
 const stripHtml = (html) => {
@@ -63,6 +64,7 @@ const PortfolioImage = ({ imageUrl, title }) => {
 
 const Portfolios = () => {
   const [portfolios, setPortfolios] = useState([]);
+  const [allPortfolios, setAllPortfolios] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -70,6 +72,12 @@ const Portfolios = () => {
   const [editingPortfolio, setEditingPortfolio] = useState(null);
   const [selectedPortfolio, setSelectedPortfolio] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    category: '',
+    featured: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
   // Normalize tech_stack for selected portfolio to avoid runtime errors
   const normalizedSelectedTechStack = selectedPortfolio
     ? (typeof selectedPortfolio.tech_stack === 'string'
@@ -108,6 +116,7 @@ const Portfolios = () => {
         fetchAdminPortfolios(token),
         fetchAdminProjects(token)
       ]);
+      setAllPortfolios(portfoliosData);
       setPortfolios(portfoliosData);
       setProjects(projectsData);
     } catch (error) {
@@ -123,6 +132,33 @@ const Portfolios = () => {
     }
   };
 
+  // Create search index cache for better performance
+  const searchCache = useMemo(() => {
+    if (allPortfolios.length === 0) return null;
+    return createSearchCache(allPortfolios, ['title', 'description', 'category', 'slug', 'tech_stack']);
+  }, [allPortfolios]);
+
+  // Filter portfolios based on search and filters using FlexSearch
+  const filteredPortfolios = useMemo(() => {
+    const allFilters = {
+      category: filters.category,
+      featured: filters.featured !== '' ? filters.featured : undefined
+    };
+    
+    return filterData(
+      allPortfolios,
+      searchTerm,
+      ['title', 'description', 'category', 'slug'],
+      allFilters,
+      searchCache
+    );
+  }, [allPortfolios, searchTerm, filters, searchCache]);
+
+  // Update displayed portfolios when filters change
+  useEffect(() => {
+    setPortfolios(filteredPortfolios);
+  }, [filteredPortfolios]);
+
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this portfolio item?')) {
       return;
@@ -131,7 +167,7 @@ const Portfolios = () => {
     try {
       const token = localStorage.getItem('cms_token');
       await deleteAdminPortfolio(id, token);
-      setPortfolios(portfolios.filter(portfolio => portfolio.id !== id));
+      setAllPortfolios(allPortfolios.filter(portfolio => portfolio.id !== id));
     } catch (error) {
       alert('Error deleting portfolio: ' + error.message);
     }
@@ -308,6 +344,83 @@ const Portfolios = () => {
             <p className="text-red-300">{error}</p>
           </div>
         )}
+
+        {/* Search and Filter Section */}
+        <div className="bg-surface rounded-xl border border-white/10 p-4 sm:p-6 mb-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search Bar */}
+            <div className="flex-1 relative">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
+              <input
+                type="text"
+                placeholder="Search by title, description, category..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-secondary border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-accent"
+              />
+            </div>
+
+            {/* Filter Toggle */}
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                  showFilters || Object.values(filters).some(f => f) || searchTerm
+                    ? 'bg-accent/20 border border-accent/30 text-accent'
+                    : 'bg-secondary/50 border border-white/20 text-white/70 hover:bg-white/5'
+                }`}
+              >
+                <FaFilter /> Filters
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Panel */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Category</label>
+                <input
+                  type="text"
+                  placeholder="Filter by category"
+                  value={filters.category}
+                  onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                  className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-accent"
+                />
+              </div>
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Featured</label>
+                <select
+                  value={filters.featured}
+                  onChange={(e) => setFilters(prev => ({ ...prev, featured: e.target.value }))}
+                  className="w-full px-4 py-2 bg-secondary border border-white/20 rounded-lg text-white focus:outline-none focus:border-accent"
+                >
+                  <option value="">All</option>
+                  <option value="true">Featured Only</option>
+                  <option value="false">Not Featured</option>
+                </select>
+              </div>
+              {(searchTerm || Object.values(filters).some(f => f)) && (
+                <div className="flex items-end">
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setFilters({ category: '', featured: '' });
+                    }}
+                    className="w-full px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 hover:bg-red-500/30 transition"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Results Count */}
+          <div className="mt-4 text-white/50 text-sm">
+            Showing {filteredPortfolios.length} of {allPortfolios.length} portfolios
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {portfolios.length === 0 ? (
