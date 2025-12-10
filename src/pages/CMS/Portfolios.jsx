@@ -174,25 +174,36 @@ const Portfolios = () => {
   };
 
   const handleEdit = (portfolio) => {
-    setEditingPortfolio(portfolio);
-    const techStack = typeof portfolio.tech_stack === 'string' 
-      ? JSON.parse(portfolio.tech_stack || '[]') 
-      : portfolio.tech_stack || [];
-    setFormData({
-      project_id: portfolio.project_id?.toString() || '',
-      title: portfolio.title || '',
-      description: portfolio.description || '',
-      image_url: portfolio.image_url || '',
-      category: portfolio.category || '',
-      slug: portfolio.slug || '',
-      featured: portfolio.featured || false,
-      display_order: portfolio.display_order || 0,
-      live_url: portfolio.live_url || '',
-      github_url: portfolio.github_url || '',
-      tech_stack: techStack
-    });
-    setTechStackInput(techStack.join(', '));
-    setShowModal(true);
+    try {
+      setEditingPortfolio(portfolio);
+      let techStack = [];
+      try {
+        techStack = typeof portfolio.tech_stack === 'string' 
+          ? JSON.parse(portfolio.tech_stack || '[]') 
+          : (portfolio.tech_stack || []);
+      } catch (parseError) {
+        console.error('Error parsing tech_stack:', parseError);
+        techStack = [];
+      }
+      setFormData({
+        project_id: portfolio.project_id?.toString() || '',
+        title: portfolio.title || '',
+        description: portfolio.description || '',
+        image_url: portfolio.image_url || '',
+        category: portfolio.category || '',
+        slug: portfolio.slug || '',
+        featured: portfolio.featured || false,
+        display_order: portfolio.display_order || 0,
+        live_url: portfolio.live_url || '',
+        github_url: portfolio.github_url || '',
+        tech_stack: Array.isArray(techStack) ? techStack : []
+      });
+      setTechStackInput(Array.isArray(techStack) ? techStack.join(', ') : '');
+      setShowModal(true);
+    } catch (error) {
+      console.error('Error in handleEdit:', error);
+      setError('Failed to load portfolio for editing: ' + error.message);
+    }
   };
 
   const handleAddTech = () => {
@@ -493,6 +504,21 @@ const Portfolios = () => {
               onClick={() => {
                 setShowModal(false);
                 setEditingPortfolio(null);
+                setError('');
+                setFormData({
+                  project_id: '',
+                  title: '',
+                  description: '',
+                  image_url: '',
+                  category: '',
+                  slug: '',
+                  featured: false,
+                  display_order: 0,
+                  live_url: '',
+                  github_url: '',
+                  tech_stack: []
+                });
+                setTechStackInput('');
               }}
               className="absolute top-4 right-4 bg-red-500/10 hover:bg-red-500/20 text-red-300 p-2 rounded-full transition"
               aria-label="Close"
@@ -666,6 +692,21 @@ const Portfolios = () => {
                   onClick={() => {
                     setShowModal(false);
                     setEditingPortfolio(null);
+                    setError('');
+                    setFormData({
+                      project_id: '',
+                      title: '',
+                      description: '',
+                      image_url: '',
+                      category: '',
+                      slug: '',
+                      featured: false,
+                      display_order: 0,
+                      live_url: '',
+                      github_url: '',
+                      tech_stack: []
+                    });
+                    setTechStackInput('');
                   }}
                   className="px-6 py-3 bg-secondary border border-white/20 text-white rounded-lg hover:bg-secondary/80 transition"
                 >

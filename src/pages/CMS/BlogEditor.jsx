@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaSave, FaTimes, FaEye, FaImage } from 'react-icons/fa';
 import SEOPlugin from '../../components/SEO/SEOPlugin';
@@ -36,6 +36,30 @@ const BlogEditor = () => {
   const [error, setError] = useState('');
   const [slugError, setSlugError] = useState('');
 
+  const fetchBlog = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('cms_token');
+      if (!token) {
+        navigate('/cms/login');
+        return;
+      }
+      
+      console.log('Fetching blog with ID:', id);
+      const data = await fetchAdminBlog(id, token);
+      console.log('Blog data received:', data);
+      setFormData(data);
+    } catch (error) {
+      console.error('Error fetching blog:', error);
+      if (error.message && (error.message.includes('401') || error.message.includes('Token'))) {
+        localStorage.removeItem('cms_token');
+        localStorage.removeItem('cms_user');
+        navigate('/cms/login');
+        return;
+      }
+      setError('Failed to fetch blog post: ' + error.message);
+    }
+  }, [id, navigate]);
+
   useEffect(() => {
     const token = localStorage.getItem('cms_token');
     console.log('BlogEditor useEffect - token exists:', !!token, 'isEdit:', isEdit, 'id:', id);
@@ -53,7 +77,7 @@ const BlogEditor = () => {
       console.error('Edit mode but no ID provided');
       setError('No blog ID provided for editing');
     }
-  }, [id, isEdit, navigate]);
+  }, [id, isEdit, navigate, fetchBlog]);
 
   useEffect(() => {
     // Auto-generate slug from title
@@ -79,30 +103,6 @@ const BlogEditor = () => {
       setFormData(prev => ({ ...prev, meta_description: formData.excerpt.substring(0, 160) }));
     }
   }, [formData.excerpt]);
-
-  const fetchBlog = async () => {
-    try {
-      const token = localStorage.getItem('cms_token');
-      if (!token) {
-        navigate('/cms/login');
-        return;
-      }
-      
-      console.log('Fetching blog with ID:', id);
-      const data = await fetchAdminBlog(id, token);
-      console.log('Blog data received:', data);
-      setFormData(data);
-    } catch (error) {
-      console.error('Error fetching blog:', error);
-      if (error.message && (error.message.includes('401') || error.message.includes('Token'))) {
-        localStorage.removeItem('cms_token');
-        localStorage.removeItem('cms_user');
-        navigate('/cms/login');
-        return;
-      }
-      setError('Failed to fetch blog post: ' + error.message);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
