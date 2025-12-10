@@ -3,7 +3,6 @@
  * Works with all admin dashboard data types
  */
 
-// Import FlexSearch - FlexSearch 0.8.x uses Index as named export
 import { Index } from 'flexsearch';
 
 /**
