@@ -1,15 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FaPlus, FaEdit, FaTrash, FaUser, FaCalendar, FaFlag,
-  FaCheckCircle, FaSpinner, FaEye, FaTimes
+  FaCheckCircle, FaSpinner, FaEye, FaTimes, FaSearch, FaFilter,
+  FaList, FaTh, FaDownload, FaFileCsv, FaFileExcel
 } from 'react-icons/fa';
 import { 
   fetchAdminTasks, createAdminTask, updateAdminTask, deleteAdminTask, 
   fetchAdminUsers, fetchAdminProjects 
 } from '../../utils/api.js';
+import { filterData, downloadCSV, downloadExcel, createSearchCache } from '../../utils/exportUtils.js';
 
 const Tasks = () => {
+  const [allTasks, setAllTasks] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -18,6 +21,17 @@ const Tasks = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [user, setUser] = useState(null);
+  const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'list'
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    status: '',
+    priority: '',
+    assigned_user_id: '',
+    project_id: '',
+    due_date_from: '',
+    due_date_to: ''
+  });
   const navigate = useNavigate();
 
   const statuses = [
@@ -63,6 +77,7 @@ const Tasks = () => {
         fetchAdminProjects(token).catch(() => [])
       ]);
       
+      setAllTasks(tasksData);
       setTasks(tasksData);
       setUsers(usersData);
       setProjects(projectsData);
@@ -77,6 +92,134 @@ const Tasks = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Create search index cache for better performance
+  const searchCache = useMemo(() => {
+    if (allTasks.length === 0) return null;
+    return createSearchCache(allTasks, ['title', 'description', 'project_title']);
+  }, [allTasks]);
+
+  // Filter tasks based on search and filters
+  const filteredTasks = useMemo(() => {
+    let filtered = [...allTasks];
+
+    // Apply search
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(task => {
+        const title = (task.title || '').toLowerCase();
+        const description = (task.description || '').toLowerCase();
+        const projectTitle = (task.project_title || '').toLowerCase();
+        return title.includes(searchLower) || 
+               description.includes(searchLower) || 
+               projectTitle.includes(searchLower);
+      });
+    }
+
+    // Apply filters
+    if (filters.status) {
+      filtered = filtered.filter(task => task.status === filters.status);
+    }
+    if (filters.priority) {
+      filtered = filtered.filter(task => task.priority === filters.priority);
+    }
+    if (filters.assigned_user_id) {
+      if (filters.assigned_user_id === 'unassigned') {
+        filtered = filtered.filter(task => 
+          !task.assigned_users || task.assigned_users.length === 0
+        );
+      } else {
+        filtered = filtered.filter(task => 
+          (task.assigned_users || []).some(u => u.id === parseInt(filters.assigned_user_id))
+        );
+      }
+    }
+    if (filters.project_id) {
+      filtered = filtered.filter(task => task.project_id === parseInt(filters.project_id));
+    }
+    if (filters.due_date_from) {
+      filtered = filtered.filter(task => {
+        if (!task.due_date) return false;
+        return new Date(task.due_date) >= new Date(filters.due_date_from);
+      });
+    }
+    if (filters.due_date_to) {
+      filtered = filtered.filter(task => {
+        if (!task.due_date) return false;
+        return new Date(task.due_date) <= new Date(filters.due_date_to);
+      });
+    }
+
+    return filtered;
+  }, [allTasks, searchTerm, filters]);
+
+  // Update displayed tasks when filters change
+  useEffect(() => {
+    setTasks(filteredTasks);
+  }, [filteredTasks]);
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilters({
+      status: '',
+      priority: '',
+      assigned_user_id: '',
+      project_id: '',
+      due_date_from: '',
+      due_date_to: ''
+    });
+  };
+
+  const handleExportCSV = () => {
+    const headers = [
+      { label: 'ID', key: 'id' },
+      { label: 'Title', key: 'title' },
+      { label: 'Description', key: 'description' },
+      { label: 'Status', key: 'status' },
+      { label: 'Priority', key: 'priority' },
+      { label: 'Project', key: 'project_title' },
+      { label: 'Due Date', key: 'due_date' },
+      { label: 'Created By', key: 'created_by.username' },
+      { label: 'Assigned Users', key: 'assigned_users' }
+    ];
+    
+    const exportData = filteredTasks.map(task => ({
+      ...task,
+      'created_by.username': task.created_by?.username || '',
+      'assigned_users': (task.assigned_users || []).map(u => u.username).join(', ')
+    }));
+    
+    downloadCSV(exportData, headers, `tasks_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const handleExportExcel = () => {
+    const headers = [
+      { label: 'ID', key: 'id' },
+      { label: 'Title', key: 'title' },
+      { label: 'Description', key: 'description' },
+      { label: 'Status', key: 'status' },
+      { label: 'Priority', key: 'priority' },
+      { label: 'Project', key: 'project_title' },
+      { label: 'Due Date', key: 'due_date' },
+      { label: 'Created By', key: 'created_by.username' },
+      { label: 'Assigned Users', key: 'assigned_users' }
+    ];
+    
+    const exportData = filteredTasks.map(task => ({
+      ...task,
+      'created_by.username': task.created_by?.username || '',
+      'assigned_users': (task.assigned_users || []).map(u => u.username).join(', ')
+    }));
+    
+    downloadExcel(exportData, headers, `tasks_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const handleCreateTask = () => {
@@ -121,6 +264,11 @@ const Tasks = () => {
     return tasks.filter(task => task.status === status);
   };
 
+  const getAssignedUserNames = (task) => {
+    if (!task.assigned_users || task.assigned_users.length === 0) return 'Unassigned';
+    return task.assigned_users.map(u => u.username).join(', ');
+  };
+
   const getPriorityColor = (priority) => {
     const priorityObj = priorities.find(p => p.id === priority);
     return priorityObj?.color || 'bg-gray-400';
@@ -158,14 +306,193 @@ const Tasks = () => {
             <h1 className="text-3xl font-bold text-white mb-2">Task Board</h1>
             <p className="text-white/70">Manage and track your tasks</p>
           </div>
-          {canCreate && (
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-surface rounded-lg border border-white/10 p-1">
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={`p-2 rounded transition ${
+                  viewMode === 'kanban' 
+                    ? 'bg-accent text-white' 
+                    : 'text-white/70 hover:text-white'
+                }`}
+                title="Kanban View"
+              >
+                <FaTh />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded transition ${
+                  viewMode === 'list' 
+                    ? 'bg-accent text-white' 
+                    : 'text-white/70 hover:text-white'
+                }`}
+                title="List View"
+              >
+                <FaList />
+              </button>
+            </div>
+            {canCreate && (
+              <button
+                onClick={handleCreateTask}
+                className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent2 rounded-lg text-white font-medium transition"
+              >
+                <FaPlus /> Create Task
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="bg-surface rounded-lg border border-white/10 p-4 mb-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <div className="relative">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
+                <input
+                  type="text"
+                  placeholder="Search tasks by title, description, or project..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-secondary/50 border border-white/10 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-accent"
+                />
+              </div>
+            </div>
+
+            {/* Filter Toggle */}
             <button
-              onClick={handleCreateTask}
-              className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent2 rounded-lg text-white font-medium transition"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                showFilters || Object.values(filters).some(f => f)
+                  ? 'bg-accent/20 text-accent border border-accent'
+                  : 'bg-secondary/50 text-white/70 hover:bg-secondary border border-white/10'
+              }`}
             >
-              <FaPlus /> Create Task
+              <FaFilter />
+              Filters
+              {(Object.values(filters).some(f => f) || searchTerm) && (
+                <span className="bg-accent text-white text-xs px-2 py-0.5 rounded-full">
+                  {Object.values(filters).filter(f => f).length + (searchTerm ? 1 : 0)}
+                </span>
+              )}
             </button>
+
+            {/* Export Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center gap-2 px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 rounded-lg text-green-300 transition"
+                title="Export to CSV"
+              >
+                <FaFileCsv />
+              </button>
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-blue-300 transition"
+                title="Export to Excel"
+              >
+                <FaFileExcel />
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Panel */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Status</label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className="w-full px-4 py-2 bg-secondary/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-accent"
+                >
+                  <option value="">All Statuses</option>
+                  {statuses.map(status => (
+                    <option key={status.id} value={status.id}>{status.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Priority</label>
+                <select
+                  value={filters.priority}
+                  onChange={(e) => handleFilterChange('priority', e.target.value)}
+                  className="w-full px-4 py-2 bg-secondary/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-accent"
+                >
+                  <option value="">All Priorities</option>
+                  {priorities.map(priority => (
+                    <option key={priority.id} value={priority.id}>{priority.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Assigned To</label>
+                <select
+                  value={filters.assigned_user_id}
+                  onChange={(e) => handleFilterChange('assigned_user_id', e.target.value)}
+                  className="w-full px-4 py-2 bg-secondary/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-accent"
+                >
+                  <option value="">All Users</option>
+                  <option value="unassigned">Unassigned</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>{u.username} ({u.email})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Project</label>
+                <select
+                  value={filters.project_id}
+                  onChange={(e) => handleFilterChange('project_id', e.target.value)}
+                  className="w-full px-4 py-2 bg-secondary/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-accent"
+                >
+                  <option value="">All Projects</option>
+                  {projects.map(project => (
+                    <option key={project.id} value={project.id}>{project.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Due Date From</label>
+                <input
+                  type="date"
+                  value={filters.due_date_from}
+                  onChange={(e) => handleFilterChange('due_date_from', e.target.value)}
+                  className="w-full px-4 py-2 bg-secondary/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Due Date To</label>
+                <input
+                  type="date"
+                  value={filters.due_date_to}
+                  onChange={(e) => handleFilterChange('due_date_to', e.target.value)}
+                  className="w-full px-4 py-2 bg-secondary/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              {(searchTerm || Object.values(filters).some(f => f)) && (
+                <div className="flex items-end">
+                  <button
+                    onClick={clearFilters}
+                    className="w-full px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 hover:bg-red-500/30 transition"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
+            </div>
           )}
+
+          {/* Results Count */}
+          <div className="mt-4 text-white/50 text-sm">
+            Showing {filteredTasks.length} of {allTasks.length} tasks
+          </div>
         </div>
 
         {error && (
@@ -174,8 +501,10 @@ const Tasks = () => {
           </div>
         )}
 
-        {/* Kanban Board */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* View Mode Toggle */}
+        {viewMode === 'kanban' ? (
+          /* Kanban Board */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {statuses.map((status) => {
             const statusTasks = getTasksByStatus(status.id);
             
@@ -283,6 +612,140 @@ const Tasks = () => {
             );
           })}
         </div>
+        ) : (
+          /* List View */
+          <div className="bg-surface rounded-lg border border-white/10 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-secondary/30 border-b border-white/10">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Title</th>
+                    <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Status</th>
+                    <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Priority</th>
+                    <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Project</th>
+                    <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Assigned To</th>
+                    <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Due Date</th>
+                    <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Created By</th>
+                    <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tasks.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="px-6 py-8 text-center text-white/50">
+                        No tasks found
+                      </td>
+                    </tr>
+                  ) : (
+                    tasks.map((task) => {
+                      const canEdit = canManageAll || task.created_by?.id === user?.id;
+                      const assignedUsers = task.assigned_users || [];
+                      
+                      return (
+                        <tr key={task.id} className="border-b border-white/5 hover:bg-secondary/10">
+                          <td className="px-6 py-4">
+                            <div>
+                              <h3 className="text-white font-medium">{task.title}</h3>
+                              {task.description && (
+                                <p className="text-white/60 text-xs mt-1 line-clamp-1">
+                                  {task.description}
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                              task.status === 'done' ? 'bg-green-500/20 text-green-300' :
+                              task.status === 'in_progress' ? 'bg-blue-500/20 text-blue-300' :
+                              task.status === 'review' ? 'bg-yellow-500/20 text-yellow-300' :
+                              'bg-gray-500/20 text-gray-300'
+                            }`}>
+                              {statuses.find(s => s.id === task.status)?.label || task.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`${getPriorityColor(task.priority)} text-white text-xs px-2 py-1 rounded`}>
+                              {task.priority}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-white/70 text-sm">
+                            {task.project_title || '-'}
+                          </td>
+                          <td className="px-6 py-4">
+                            {assignedUsers.length > 0 ? (
+                              <div className="flex items-center gap-2">
+                                <div className="flex -space-x-2">
+                                  {assignedUsers.slice(0, 3).map((u) => (
+                                    <div
+                                      key={u.id}
+                                      className="w-6 h-6 rounded-full bg-accent flex items-center justify-center text-white text-xs border-2 border-surface"
+                                      title={u.username}
+                                    >
+                                      {u.username.charAt(0).toUpperCase()}
+                                    </div>
+                                  ))}
+                                  {assignedUsers.length > 3 && (
+                                    <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-white/70 text-xs border-2 border-surface">
+                                      +{assignedUsers.length - 3}
+                                    </div>
+                                  )}
+                                </div>
+                                <span className="text-white/60 text-xs ml-2">
+                                  {assignedUsers.length} user{assignedUsers.length !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-white/40 text-sm">Unassigned</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            {task.due_date ? (
+                              <div className={`text-sm ${
+                                isOverdue(task.due_date) && task.status !== 'done'
+                                  ? 'text-red-400'
+                                  : 'text-white/70'
+                              }`}>
+                                {formatDate(task.due_date)}
+                                {isOverdue(task.due_date) && task.status !== 'done' && (
+                                  <span className="text-red-400 ml-1 text-xs">(Overdue)</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-white/40 text-sm">-</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-white/70 text-sm">
+                            {task.created_by?.username || '-'}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleEditTask(task)}
+                                className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 rounded transition"
+                                title="Edit Task"
+                              >
+                                <FaEdit />
+                              </button>
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleDeleteTask(task.id)}
+                                  className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded transition"
+                                  title="Delete Task"
+                                >
+                                  <FaTrash />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Task Modal */}
