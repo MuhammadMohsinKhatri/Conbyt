@@ -13,6 +13,7 @@ const BlogDetail = lazy(() => import("./pages/BlogDetail"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const CMSLogin = lazy(() => import("./pages/CMS/Login"));
+const CMSRegister = lazy(() => import("./pages/CMS/Register"));
 const CMSDashboard = lazy(() => import("./pages/CMS/Dashboard"));
 const BlogEditor = lazy(() => import("./pages/CMS/BlogEditor"));
 const Blogs = lazy(() => import("./pages/CMS/Blogs"));
@@ -45,6 +46,7 @@ function AppContent() {
           <Route path="/terms-of-service" element={<TermsOfService />} />
           {/* CMS Routes */}
           <Route path="/cms/login" element={<CMSLogin />} />
+          <Route path="/cms/register" element={<CMSRegister />} />
           <Route path="/cms/dashboard" element={<CMSDashboard />} />
           <Route path="/cms/blogs" element={<Blogs />} />
           <Route path="/cms/blogs/new" element={<BlogEditor />} />

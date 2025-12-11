@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { FaLock, FaUser } from 'react-icons/fa';
 import { adminLogin } from '../../utils/api.js';
 import { useToast } from '../../contexts/ToastContext';
@@ -87,6 +87,15 @@ const Login = () => {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-white/70 text-sm">
+            Don't have an account?{' '}
+            <Link to="/cms/register" className="text-accent hover:text-accent2 font-medium">
+              Register
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

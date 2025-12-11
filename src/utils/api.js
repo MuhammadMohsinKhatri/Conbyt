@@ -90,6 +90,36 @@ export const adminLogin = async (username, password) => {
   }
 };
 
+export const adminRegister = async (username, email, password, role) => {
+  const url = `${API_BASE_URL}/admin/auth/register`;
+  console.log('🔍 Attempting registration to:', url);
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username, email, password, role })
+    });
+    
+    console.log('🔍 Registration response status:', response.status);
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Network error' }));
+      console.error('🔍 Registration error:', error);
+      throw new Error(error.error || 'Registration failed');
+    }
+    
+    const data = await response.json();
+    console.log('✅ Registration successful');
+    return data;
+  } catch (error) {
+    console.error('🔍 Registration fetch error:', error);
+    throw error;
+  }
+};
+
 export const adminVerify = async (token) => {
   const response = await fetch(`${API_BASE_URL}/admin/auth/verify`, {
     headers: {
