@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaDollarSign, FaArrowLeft, FaSearch, FaDownload, FaFileCsv, FaFileExcel, FaFilter } from 'react-icons/fa';
 import { fetchAdminPayments, fetchAdminProjects, fetchAdminMilestones, deleteAdminPayment, createAdminPayment, updateAdminPayment } from '../../utils/api.js';
 import { filterData, downloadCSV, downloadExcel, createSearchCache } from '../../utils/exportUtils.js';
+import { useToast } from '../../contexts/ToastContext';
 
 const Payments = () => {
   const [payments, setPayments] = useState([]);
@@ -31,6 +32,7 @@ const Payments = () => {
     notes: ''
   });
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     const token = localStorage.getItem('cms_token');
@@ -63,10 +65,13 @@ const Payments = () => {
       if (error.message.includes('401') || error.message.includes('Token')) {
         localStorage.removeItem('cms_token');
         localStorage.removeItem('cms_user');
+        toast.error('Session expired. Please log in again.');
         navigate('/cms/login');
         return;
       }
-      setError('Failed to fetch data');
+      const errorMsg = 'Failed to fetch data';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -95,9 +100,10 @@ const Payments = () => {
   }, [filteredPayments]);
 
   const handleExportCSV = () => {
-    const headers = [
-      { label: 'ID', key: 'id' },
-      { label: 'Project', key: 'project_title' },
+    try {
+      const headers = [
+        { label: 'ID', key: 'id' },
+        { label: 'Project', key: 'project_title' },
       { label: 'Milestone', key: 'milestone_title' },
       { label: 'Amount', key: 'amount' },
       { label: 'Payment Date', key: 'payment_date' },
@@ -155,8 +161,9 @@ const Payments = () => {
       const token = localStorage.getItem('cms_token');
       await deleteAdminPayment(id, token);
       setPayments(payments.filter(payment => payment.id !== id));
+      toast.success('Payment deleted successfully');
     } catch (error) {
-      alert('Error deleting payment: ' + error.message);
+      toast.error('Error deleting payment: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -188,12 +195,16 @@ const Payments = () => {
       }
 
       if (!formData.project_id || !formData.project_id.trim()) {
-        setError('Project is required');
+        const errorMsg = 'Project is required';
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
       if (!formData.amount || !formData.amount.trim() || parseFloat(formData.amount) <= 0) {
-        setError('Amount is required and must be greater than 0');
+        const errorMsg = 'Amount is required and must be greater than 0';
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 

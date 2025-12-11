@@ -5,6 +5,7 @@ import SEOPlugin from '../../components/SEO/SEOPlugin';
 import ImageUpload from '../../components/CMS/ImageUpload';
 import RichTextEditor from '../../components/CMS/RichTextEditor';
 import { fetchAdminBlog, createAdminBlog, updateAdminBlog } from '../../utils/api.js';
+import { useToast } from '../../contexts/ToastContext';
 
 const BlogEditor = () => {
   const { id } = useParams();
@@ -35,6 +36,7 @@ const BlogEditor = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [slugError, setSlugError] = useState('');
+  const toast = useToast();
 
   const fetchBlog = useCallback(async () => {
     try {
@@ -53,10 +55,13 @@ const BlogEditor = () => {
       if (error.message && (error.message.includes('401') || error.message.includes('Token'))) {
         localStorage.removeItem('cms_token');
         localStorage.removeItem('cms_user');
+        toast.error('Session expired. Please log in again.');
         navigate('/cms/login');
         return;
       }
-      setError('Failed to fetch blog post: ' + error.message);
+      const errorMsg = 'Failed to fetch blog post: ' + error.message;
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   }, [id, navigate]);
 
@@ -110,7 +115,9 @@ const BlogEditor = () => {
     setSlugError('');
 
     if (!formData.title || !formData.slug || !formData.content) {
-      setError('Title, slug, and content are required');
+      const errorMsg = 'Title, slug, and content are required';
+      setError(errorMsg);
+      toast.error(errorMsg);
       return;
     }
 
@@ -121,15 +128,20 @@ const BlogEditor = () => {
       
       if (isEdit) {
         await updateAdminBlog(id, formData, token);
+        toast.success('Blog post updated successfully');
       } else {
         await createAdminBlog(formData, token);
+        toast.success('Blog post created successfully');
       }
-      navigate('/cms/dashboard');
+      navigate('/cms/blogs');
     } catch (error) {
       if (error.message && error.message.includes('Slug')) {
         setSlugError(error.message);
+        toast.error(error.message);
       } else {
-        setError(error.message || 'Network error. Please check if the server is running.');
+        const errorMsg = error.message || 'Network error. Please check if the server is running.';
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } finally {
       setLoading(false);

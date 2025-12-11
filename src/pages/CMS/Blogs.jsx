@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaEye, FaSignOutAlt, FaFileAlt, FaArrowLeft, FaSearch, FaDownload, FaFileCsv, FaFileExcel, FaFilter } from 'react-icons/fa';
 import { fetchAdminBlogs, deleteAdminBlog } from '../../utils/api.js';
 import { filterData, downloadCSV, downloadExcel, createSearchCache } from '../../utils/exportUtils.js';
+import { useToast } from '../../contexts/ToastContext';
 
 const Blogs = () => {
   const [blogs, setBlogs] = useState([]);
@@ -16,6 +17,7 @@ const Blogs = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     const token = localStorage.getItem('cms_token');
@@ -32,14 +34,18 @@ const Blogs = () => {
       const data = await fetchAdminBlogs(token);
       setAllBlogs(data);
       setBlogs(data);
+      setError('');
     } catch (error) {
       if (error.message.includes('401') || error.message.includes('Token')) {
         localStorage.removeItem('cms_token');
         localStorage.removeItem('cms_user');
+        toast.error('Session expired. Please log in again.');
         navigate('/cms/login');
         return;
       }
-      setError('Failed to fetch blogs');
+      const errorMsg = 'Failed to fetch blogs';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -120,8 +126,10 @@ const Blogs = () => {
       const token = localStorage.getItem('cms_token');
       await deleteAdminBlog(id, token);
       setBlogs(blogs.filter(blog => blog.id !== id));
+      setAllBlogs(allBlogs.filter(blog => blog.id !== id));
+      toast.success('Blog post deleted successfully');
     } catch (error) {
-      alert('Error deleting blog post: ' + error.message);
+      toast.error('Error deleting blog post: ' + (error.message || 'Unknown error'));
     }
   };
 

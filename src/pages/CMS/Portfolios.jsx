@@ -5,6 +5,7 @@ import ImageUpload from '../../components/CMS/ImageUpload';
 import RichTextEditor from '../../components/CMS/RichTextEditor';
 import { fetchAdminPortfolios, fetchAdminProjects, deleteAdminPortfolio, createAdminPortfolio, updateAdminPortfolio } from '../../utils/api.js';
 import { filterData, createSearchCache } from '../../utils/exportUtils.js';
+import { useToast } from '../../contexts/ToastContext';
 
 // Helper function to strip HTML tags for preview
 const stripHtml = (html) => {
@@ -123,10 +124,13 @@ const Portfolios = () => {
       if (error.message.includes('401') || error.message.includes('Token')) {
         localStorage.removeItem('cms_token');
         localStorage.removeItem('cms_user');
+        toast.error('Session expired. Please log in again.');
         navigate('/cms/login');
         return;
       }
-      setError('Failed to fetch data');
+      const errorMsg = 'Failed to fetch data';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -168,8 +172,10 @@ const Portfolios = () => {
       const token = localStorage.getItem('cms_token');
       await deleteAdminPortfolio(id, token);
       setAllPortfolios(allPortfolios.filter(portfolio => portfolio.id !== id));
+      setPortfolios(portfolios.filter(portfolio => portfolio.id !== id));
+      toast.success('Portfolio deleted successfully');
     } catch (error) {
-      alert('Error deleting portfolio: ' + error.message);
+      toast.error('Error deleting portfolio: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -241,7 +247,9 @@ const Portfolios = () => {
       }
 
       if (!formData.title || !formData.title.trim()) {
-        setError('Title is required');
+        const errorMsg = 'Title is required';
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
@@ -278,10 +286,13 @@ const Portfolios = () => {
         tech_stack: []
       });
       setTechStackInput('');
+      toast.success(editingPortfolio ? 'Portfolio updated successfully' : 'Portfolio created successfully');
       fetchData();
     } catch (error) {
       console.error('Error saving portfolio:', error);
-      setError(error.message || 'Failed to save portfolio. Please try again.');
+      const errorMsg = error.message || 'Failed to save portfolio. Please try again.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaTasks, FaArrowLeft } from 'react-icons/fa';
 import RichTextEditor from '../../components/CMS/RichTextEditor';
 import { fetchAdminMilestones, fetchAdminProjects, deleteAdminMilestone, createAdminMilestone, updateAdminMilestone } from '../../utils/api.js';
+import { useToast } from '../../contexts/ToastContext';
 
 // Helper function to strip HTML tags for preview
 const stripHtml = (html) => {
@@ -30,6 +31,7 @@ const Milestones = () => {
     order_index: 0
   });
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     const token = localStorage.getItem('cms_token');
@@ -61,10 +63,13 @@ const Milestones = () => {
       if (error.message.includes('401') || error.message.includes('Token')) {
         localStorage.removeItem('cms_token');
         localStorage.removeItem('cms_user');
+        toast.error('Session expired. Please log in again.');
         navigate('/cms/login');
         return;
       }
-      setError('Failed to fetch projects');
+      const errorMsg = 'Failed to fetch projects';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -76,8 +81,11 @@ const Milestones = () => {
       const token = localStorage.getItem('cms_token');
       const data = await fetchAdminMilestones(selectedProject, token);
       setMilestones(data.sort((a, b) => a.order_index - b.order_index));
+      setError('');
     } catch (error) {
-      setError('Failed to fetch milestones');
+      const errorMsg = 'Failed to fetch milestones';
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
@@ -89,9 +97,10 @@ const Milestones = () => {
     try {
       const token = localStorage.getItem('cms_token');
       await deleteAdminMilestone(id, token);
+      toast.success('Milestone deleted successfully');
       fetchMilestones();
     } catch (error) {
-      alert('Error deleting milestone: ' + error.message);
+      toast.error('Error deleting milestone: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -152,10 +161,13 @@ const Milestones = () => {
         due_date: '',
         order_index: milestones.length
       });
+      toast.success(editingMilestone ? 'Milestone updated successfully' : 'Milestone created successfully');
       fetchMilestones();
     } catch (error) {
       console.error('Error saving milestone:', error);
-      setError(error.message || 'Failed to save milestone. Please try again.');
+      const errorMsg = error.message || 'Failed to save milestone. Please try again.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 

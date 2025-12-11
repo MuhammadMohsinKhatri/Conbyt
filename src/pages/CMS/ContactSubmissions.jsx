@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaTrash, FaEnvelope, FaUser, FaCalendar, FaPhone, FaArrowLeft } from 'react-icons/fa';
+import { useToast } from '../../contexts/ToastContext';
 
 const ContactSubmissions = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -8,6 +9,7 @@ const ContactSubmissions = () => {
   const [error, setError] = useState('');
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     const token = localStorage.getItem('cms_token');
@@ -28,10 +30,13 @@ const ContactSubmissions = () => {
       if (error.message && (error.message.includes('401') || error.message.includes('Token'))) {
         localStorage.removeItem('cms_token');
         localStorage.removeItem('cms_user');
+        toast.error('Session expired. Please log in again.');
         navigate('/cms/login');
         return;
       }
-      setError('Failed to fetch contact submissions');
+      const errorMsg = 'Failed to fetch contact submissions';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -46,17 +51,13 @@ const ContactSubmissions = () => {
       const token = localStorage.getItem('cms_token');
       const { deleteAdminContact } = await import('../../utils/api.js');
       await deleteAdminContact(id, token);
-
-      if (response.ok) {
-        setSubmissions(submissions.filter(sub => sub.id !== id));
-        if (selectedSubmission?.id === id) {
-          setSelectedSubmission(null);
-        }
-      } else {
-        alert('Failed to delete submission');
+      setSubmissions(submissions.filter(sub => sub.id !== id));
+      if (selectedSubmission?.id === id) {
+        setSelectedSubmission(null);
       }
+      toast.success('Contact submission deleted successfully');
     } catch (error) {
-      alert('Error deleting submission');
+      toast.error('Error deleting submission: ' + (error.message || 'Unknown error'));
     }
   };
 

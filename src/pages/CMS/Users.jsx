@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaUser, FaEdit, FaShieldAlt, FaUserCheck, FaUserPlus } from 'react-icons/fa';
 import { fetchAllAdminUsers, updateAdminUserRole } from '../../utils/api.js';
+import { useToast } from '../../contexts/ToastContext';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -10,6 +11,7 @@ const Users = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     const token = localStorage.getItem('cms_token');
@@ -47,10 +49,13 @@ const Users = () => {
       if (error.message.includes('401') || error.message.includes('Token')) {
         localStorage.removeItem('cms_token');
         localStorage.removeItem('cms_user');
+        toast.error('Session expired. Please log in again.');
         navigate('/cms/login');
         return;
       }
-      setError('Failed to fetch users');
+      const errorMsg = 'Failed to fetch users';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -60,10 +65,14 @@ const Users = () => {
     try {
       const token = localStorage.getItem('cms_token');
       await updateAdminUserRole(userId, newRole, token);
+      toast.success('User role updated successfully');
       await fetchUsers();
       setEditingUser(null);
+      setError('');
     } catch (error) {
-      setError(error.message || 'Failed to update user role');
+      const errorMsg = error.message || 'Failed to update user role';
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
