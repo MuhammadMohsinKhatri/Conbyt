@@ -100,10 +100,9 @@ const Payments = () => {
   }, [filteredPayments]);
 
   const handleExportCSV = () => {
-    try {
-      const headers = [
-        { label: 'ID', key: 'id' },
-        { label: 'Project', key: 'project_title' },
+    const headers = [
+      { label: 'ID', key: 'id' },
+      { label: 'Project', key: 'project_title' },
       { label: 'Milestone', key: 'milestone_title' },
       { label: 'Amount', key: 'amount' },
       { label: 'Payment Date', key: 'payment_date' },
