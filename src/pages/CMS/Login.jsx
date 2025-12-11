@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaLock, FaUser } from 'react-icons/fa';
 import { adminLogin } from '../../utils/api.js';
+import { useToast } from '../../contexts/ToastContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,9 +23,12 @@ const Login = () => {
       const data = await adminLogin(formData.username, formData.password);
       localStorage.setItem('cms_token', data.token);
       localStorage.setItem('cms_user', JSON.stringify(data.user));
+      toast.success('Login successful! Welcome back.');
       navigate('/cms/dashboard');
     } catch (error) {
-      setError(error.message || 'Network error. Please check if the server is running.');
+      const errorMsg = error.message || 'Network error. Please check if the server is running.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

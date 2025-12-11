@@ -430,9 +430,24 @@ router.delete('/:id', authenticateAdmin, async (req, res) => {
 // Get all users for assignment dropdown
 router.get('/users/list', authenticateAdmin, async (req, res) => {
   try {
-    const [users] = await pool.execute(
-      'SELECT id, username, email, role FROM admin_users ORDER BY username ASC'
-    );
+    // Check if role column exists, if not select without it
+    let users;
+    try {
+      [users] = await pool.execute(
+        'SELECT id, username, email, role FROM admin_users ORDER BY username ASC'
+      );
+    } catch (error) {
+      if (error.code === 'ER_BAD_FIELD_ERROR' || error.errno === 1054) {
+        // Role column doesn't exist, select without it
+        [users] = await pool.execute(
+          'SELECT id, username, email FROM admin_users ORDER BY username ASC'
+        );
+        // Add default role
+        users = users.map(u => ({ ...u, role: 'task_creator' }));
+      } else {
+        throw error;
+      }
+    }
     res.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);

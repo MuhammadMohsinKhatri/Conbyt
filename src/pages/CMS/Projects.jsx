@@ -4,6 +4,7 @@ import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaProjectDiagram, FaArrowLeft, F
 import RichTextEditor from '../../components/CMS/RichTextEditor';
 import { fetchAdminProjects, fetchAdminClients, deleteAdminProject, createAdminProject, updateAdminProject } from '../../utils/api.js';
 import { filterData, downloadCSV, downloadExcel, createSearchCache } from '../../utils/exportUtils.js';
+import { useToast } from '../../contexts/ToastContext';
 
 // Helper function to strip HTML tags for preview
 const stripHtml = (html) => {
@@ -98,31 +99,41 @@ const Projects = () => {
   }, [filteredProjects]);
 
   const handleExportCSV = () => {
-    const headers = [
-      { label: 'ID', key: 'id' },
-      { label: 'Title', key: 'title' },
-      { label: 'Client', key: 'client_name' },
-      { label: 'Status', key: 'status' },
-      { label: 'Budget', key: 'budget' },
-      { label: 'Category', key: 'category' },
-      { label: 'Start Date', key: 'start_date' },
-      { label: 'End Date', key: 'end_date' }
-    ];
-    downloadCSV(filteredProjects, headers, `projects_${new Date().toISOString().split('T')[0]}.csv`);
+    try {
+      const headers = [
+        { label: 'ID', key: 'id' },
+        { label: 'Title', key: 'title' },
+        { label: 'Client', key: 'client_name' },
+        { label: 'Status', key: 'status' },
+        { label: 'Budget', key: 'budget' },
+        { label: 'Category', key: 'category' },
+        { label: 'Start Date', key: 'start_date' },
+        { label: 'End Date', key: 'end_date' }
+      ];
+      downloadCSV(filteredProjects, headers, `projects_${new Date().toISOString().split('T')[0]}.csv`);
+      toast.success('Projects exported to CSV successfully');
+    } catch (error) {
+      toast.error('Failed to export CSV: ' + (error.message || 'Unknown error'));
+    }
   };
 
   const handleExportExcel = () => {
-    const headers = [
-      { label: 'ID', key: 'id' },
-      { label: 'Title', key: 'title' },
-      { label: 'Client', key: 'client_name' },
-      { label: 'Status', key: 'status' },
-      { label: 'Budget', key: 'budget' },
-      { label: 'Category', key: 'category' },
-      { label: 'Start Date', key: 'start_date' },
-      { label: 'End Date', key: 'end_date' }
-    ];
-    downloadExcel(filteredProjects, headers, `projects_${new Date().toISOString().split('T')[0]}.xlsx`);
+    try {
+      const headers = [
+        { label: 'ID', key: 'id' },
+        { label: 'Title', key: 'title' },
+        { label: 'Client', key: 'client_name' },
+        { label: 'Status', key: 'status' },
+        { label: 'Budget', key: 'budget' },
+        { label: 'Category', key: 'category' },
+        { label: 'Start Date', key: 'start_date' },
+        { label: 'End Date', key: 'end_date' }
+      ];
+      downloadExcel(filteredProjects, headers, `projects_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Projects exported to Excel successfully');
+    } catch (error) {
+      toast.error('Failed to export Excel: ' + (error.message || 'Unknown error'));
+    }
   };
 
   const handleFilterChange = (key, value) => {
@@ -146,8 +157,9 @@ const Projects = () => {
       const token = localStorage.getItem('cms_token');
       await deleteAdminProject(id, token);
       setProjects(projects.filter(project => project.id !== id));
+      toast.success('Project deleted successfully');
     } catch (error) {
-      alert('Error deleting project: ' + error.message);
+      toast.error('Error deleting project: ' + (error.message || 'Unknown error'));
     }
   };
 

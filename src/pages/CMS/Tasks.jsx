@@ -10,6 +10,7 @@ import {
   fetchAdminUsers, fetchAdminProjects 
 } from '../../utils/api.js';
 import { filterData, downloadCSV, downloadExcel, createSearchCache } from '../../utils/exportUtils.js';
+import { useToast } from '../../contexts/ToastContext';
 
 const Tasks = () => {
   const [allTasks, setAllTasks] = useState([]);
@@ -33,6 +34,7 @@ const Tasks = () => {
     due_date_to: ''
   });
   const navigate = useNavigate();
+  const toast = useToast();
 
   const statuses = [
     { id: 'todo', label: 'To Do', color: 'bg-gray-500' },
@@ -81,14 +83,18 @@ const Tasks = () => {
       setTasks(tasksData);
       setUsers(usersData);
       setProjects(projectsData);
+      setError('');
     } catch (error) {
       if (error.message.includes('401') || error.message.includes('Token')) {
         localStorage.removeItem('cms_token');
         localStorage.removeItem('cms_user');
+        toast.error('Session expired. Please log in again.');
         navigate('/cms/login');
         return;
       }
-      setError('Failed to fetch data');
+      const errorMsg = error.message || 'Failed to fetch data';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -179,47 +185,57 @@ const Tasks = () => {
   };
 
   const handleExportCSV = () => {
-    const headers = [
-      { label: 'ID', key: 'id' },
-      { label: 'Title', key: 'title' },
-      { label: 'Description', key: 'description' },
-      { label: 'Status', key: 'status' },
-      { label: 'Priority', key: 'priority' },
-      { label: 'Project', key: 'project_title' },
-      { label: 'Due Date', key: 'due_date' },
-      { label: 'Created By', key: 'created_by.username' },
-      { label: 'Assigned Users', key: 'assigned_users' }
-    ];
-    
-    const exportData = filteredTasks.map(task => ({
-      ...task,
-      'created_by.username': task.created_by?.username || '',
-      'assigned_users': (task.assigned_users || []).map(u => u.username).join(', ')
-    }));
-    
-    downloadCSV(exportData, headers, `tasks_${new Date().toISOString().split('T')[0]}.csv`);
+    try {
+      const headers = [
+        { label: 'ID', key: 'id' },
+        { label: 'Title', key: 'title' },
+        { label: 'Description', key: 'description' },
+        { label: 'Status', key: 'status' },
+        { label: 'Priority', key: 'priority' },
+        { label: 'Project', key: 'project_title' },
+        { label: 'Due Date', key: 'due_date' },
+        { label: 'Created By', key: 'created_by.username' },
+        { label: 'Assigned Users', key: 'assigned_users' }
+      ];
+      
+      const exportData = filteredTasks.map(task => ({
+        ...task,
+        'created_by.username': task.created_by?.username || '',
+        'assigned_users': (task.assigned_users || []).map(u => u.username).join(', ')
+      }));
+      
+      downloadCSV(exportData, headers, `tasks_${new Date().toISOString().split('T')[0]}.csv`);
+      toast.success('Tasks exported to CSV successfully');
+    } catch (error) {
+      toast.error('Failed to export CSV: ' + (error.message || 'Unknown error'));
+    }
   };
 
   const handleExportExcel = () => {
-    const headers = [
-      { label: 'ID', key: 'id' },
-      { label: 'Title', key: 'title' },
-      { label: 'Description', key: 'description' },
-      { label: 'Status', key: 'status' },
-      { label: 'Priority', key: 'priority' },
-      { label: 'Project', key: 'project_title' },
-      { label: 'Due Date', key: 'due_date' },
-      { label: 'Created By', key: 'created_by.username' },
-      { label: 'Assigned Users', key: 'assigned_users' }
-    ];
-    
-    const exportData = filteredTasks.map(task => ({
-      ...task,
-      'created_by.username': task.created_by?.username || '',
-      'assigned_users': (task.assigned_users || []).map(u => u.username).join(', ')
-    }));
-    
-    downloadExcel(exportData, headers, `tasks_${new Date().toISOString().split('T')[0]}.xlsx`);
+    try {
+      const headers = [
+        { label: 'ID', key: 'id' },
+        { label: 'Title', key: 'title' },
+        { label: 'Description', key: 'description' },
+        { label: 'Status', key: 'status' },
+        { label: 'Priority', key: 'priority' },
+        { label: 'Project', key: 'project_title' },
+        { label: 'Due Date', key: 'due_date' },
+        { label: 'Created By', key: 'created_by.username' },
+        { label: 'Assigned Users', key: 'assigned_users' }
+      ];
+      
+      const exportData = filteredTasks.map(task => ({
+        ...task,
+        'created_by.username': task.created_by?.username || '',
+        'assigned_users': (task.assigned_users || []).map(u => u.username).join(', ')
+      }));
+      
+      downloadExcel(exportData, headers, `tasks_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Tasks exported to Excel successfully');
+    } catch (error) {
+      toast.error('Failed to export Excel: ' + (error.message || 'Unknown error'));
+    }
   };
 
   const handleCreateTask = () => {
@@ -240,9 +256,12 @@ const Tasks = () => {
     try {
       const token = localStorage.getItem('cms_token');
       await deleteAdminTask(taskId, token);
+      toast.success('Task deleted successfully');
       await fetchData();
     } catch (error) {
-      setError(error.message || 'Failed to delete task');
+      const errorMsg = error.message || 'Failed to delete task';
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
@@ -250,9 +269,12 @@ const Tasks = () => {
     try {
       const token = localStorage.getItem('cms_token');
       await updateAdminTask(taskId, { status: newStatus }, token);
+      toast.success('Task status updated successfully');
       await fetchData();
     } catch (error) {
-      setError(error.message || 'Failed to update task status');
+      const errorMsg = error.message || 'Failed to update task status';
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
@@ -495,11 +517,6 @@ const Tasks = () => {
           </div>
         </div>
 
-        {error && (
-          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-6">
-            <p className="text-red-300">{error}</p>
-          </div>
-        )}
 
         {/* View Mode Toggle */}
         {viewMode === 'kanban' ? (
@@ -763,14 +780,19 @@ const Tasks = () => {
               const token = localStorage.getItem('cms_token');
               if (editingTask) {
                 await updateAdminTask(editingTask.id, taskData, token);
+                toast.success('Task updated successfully');
               } else {
                 await createAdminTask(taskData, token);
+                toast.success('Task created successfully');
               }
               await fetchData();
               setShowModal(false);
               setEditingTask(null);
+              setError('');
             } catch (error) {
-              setError(error.message || 'Failed to save task');
+              const errorMsg = error.message || 'Failed to save task';
+              setError(errorMsg);
+              toast.error(errorMsg);
             }
           }}
           user={user}

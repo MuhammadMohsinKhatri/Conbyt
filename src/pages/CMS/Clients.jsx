@@ -127,8 +127,9 @@ const Clients = () => {
       const token = localStorage.getItem('cms_token');
       await deleteAdminClient(id, token);
       setClients(clients.filter(client => client.id !== id));
+      toast.success('Client deleted successfully');
     } catch (error) {
-      alert('Error deleting client: ' + error.message);
+      toast.error('Error deleting client: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -159,7 +160,9 @@ const Clients = () => {
       }
 
       if (!formData.name || !formData.name.trim()) {
-        setError('Name is required');
+        const errorMsg = 'Name is required';
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
@@ -182,10 +185,13 @@ const Clients = () => {
         notes: '',
         status: 'active'
       });
+      toast.success(editingClient ? 'Client updated successfully' : 'Client created successfully');
       fetchClients();
     } catch (error) {
       console.error('Error saving client:', error);
-      setError(error.message || 'Failed to save client. Please try again.');
+      const errorMsg = error.message || 'Failed to save client. Please try again.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 

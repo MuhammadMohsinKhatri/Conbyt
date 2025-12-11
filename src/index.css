@@ -175,3 +175,29 @@ html, body {
 .prose-sm h4 { font-size: 1em; }
 .prose-sm h5 { font-size: 0.9em; }
 .prose-sm h6 { font-size: 0.8em; }
+
+/* Toast Animation */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* Mobile responsive adjustments for toasts */
+@media (max-width: 640px) {
+  .fixed.top-4.right-4 {
+    top: 1rem;
+    right: 1rem;
+    left: 1rem;
+    max-width: calc(100% - 2rem);
+  }
+}
