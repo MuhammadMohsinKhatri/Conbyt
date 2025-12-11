@@ -25,9 +25,14 @@ router.post('/register', async (req, res) => {
     }
 
     // Validate role if provided
-    const userRole = role && ['admin', 'task_manager', 'task_creator'].includes(role) 
-      ? role 
-      : 'task_creator';
+    // Special case: admin@conbyt.com always gets admin role
+    let userRole = 'task_creator';
+    if (email === 'admin@conbyt.com') {
+      userRole = 'admin';
+      console.log('🔐 Setting admin role for admin@conbyt.com');
+    } else if (role && ['admin', 'task_manager', 'task_creator'].includes(role)) {
+      userRole = role;
+    }
 
     // Check if user exists (support both table names)
     const tableName = process.env.ADMIN_TABLE || 'admin_users';
@@ -142,6 +147,21 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Ensure admin@conbyt.com has admin role
+    if (user.email === 'admin@conbyt.com' && user.role !== 'admin') {
+      const tableName = user.password_hash ? 'admin_users' : 'admins';
+      try {
+        await pool.execute(
+          `UPDATE ${tableName} SET role = 'admin' WHERE id = ?`,
+          [user.id]
+        );
+        user.role = 'admin';
+        console.log('✅ Updated admin@conbyt.com role to admin');
+      } catch (err) {
+        console.error('⚠️  Could not update role:', err.message);
+      }
+    }
+
     // Generate token
     const token = generateToken(user);
 
@@ -152,7 +172,7 @@ router.post('/login', async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        role: user.role || 'task_creator'
+        role: user.role || (user.email === 'admin@conbyt.com' ? 'admin' : 'task_creator')
       }
     });
   } catch (error) {
