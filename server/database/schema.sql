@@ -55,10 +55,12 @@ CREATE TABLE IF NOT EXISTS admin_users (
   username VARCHAR(100) UNIQUE NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
+  role ENUM('admin', 'task_manager', 'task_creator') DEFAULT 'task_creator',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_username (username),
-  INDEX idx_email (email)
+  INDEX idx_email (email),
+  INDEX idx_role (role)
 );
 
 -- Testimonials Table
@@ -211,5 +213,41 @@ CREATE TABLE IF NOT EXISTS portfolios (
   INDEX idx_category (category),
   INDEX idx_featured (featured),
   INDEX idx_display_order (display_order)
+);
+
+-- Tasks Table (Project Management Board)
+CREATE TABLE IF NOT EXISTS tasks (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  status ENUM('todo', 'in_progress', 'review', 'done') DEFAULT 'todo',
+  priority ENUM('low', 'medium', 'high', 'urgent') DEFAULT 'medium',
+  project_id INT,
+  created_by INT NOT NULL,
+  due_date DATE,
+  completed_at TIMESTAMP NULL,
+  order_index INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,
+  FOREIGN KEY (created_by) REFERENCES admin_users(id) ON DELETE CASCADE,
+  INDEX idx_status (status),
+  INDEX idx_priority (priority),
+  INDEX idx_project_id (project_id),
+  INDEX idx_created_by (created_by),
+  INDEX idx_due_date (due_date)
+);
+
+-- Task Assignments Table (Many-to-Many: Tasks to Users)
+CREATE TABLE IF NOT EXISTS task_assignments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  task_id INT NOT NULL,
+  user_id INT NOT NULL,
+  assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES admin_users(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_assignment (task_id, user_id),
+  INDEX idx_task_id (task_id),
+  INDEX idx_user_id (user_id)
 );
 

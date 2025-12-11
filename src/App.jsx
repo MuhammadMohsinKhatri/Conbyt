@@ -21,6 +21,8 @@ const Projects = lazy(() => import("./pages/CMS/Projects"));
 const Milestones = lazy(() => import("./pages/CMS/Milestones"));
 const Payments = lazy(() => import("./pages/CMS/Payments"));
 const Portfolios = lazy(() => import("./pages/CMS/Portfolios"));
+const Tasks = lazy(() => import("./pages/CMS/Tasks"));
+const Users = lazy(() => import("./pages/CMS/Users"));
 
 
 function AppContent() {
@@ -55,6 +57,8 @@ function AppContent() {
           <Route path="/cms/payments" element={<Payments />} />
           <Route path="/cms/portfolios" element={<Portfolios />} />
           <Route path="/cms/portfolios/new" element={<Portfolios />} />
+          <Route path="/cms/tasks" element={<Tasks />} />
+          <Route path="/cms/users" element={<Users />} />
         </Routes>
         </Suspense>
       </main>

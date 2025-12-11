@@ -18,6 +18,8 @@ import adminProjectsRoutes from './routes/admin/projects.js';
 import adminMilestonesRoutes from './routes/admin/milestones.js';
 import adminPaymentsRoutes from './routes/admin/payments.js';
 import adminPortfoliosRoutes from './routes/admin/portfolios.js';
+import adminTasksRoutes from './routes/admin/tasks.js';
+import adminUsersRoutes from './routes/admin/users.js';
 import uploadRoutes from './routes/upload.js';
 import { ensureBlogPostsColumns } from './utils/migrateColumns.js';
 
@@ -66,6 +68,8 @@ app.use('/api/admin/projects', adminProjectsRoutes);
 app.use('/api/admin/milestones', adminMilestonesRoutes);
 app.use('/api/admin/payments', adminPaymentsRoutes);
 app.use('/api/admin/portfolios', adminPortfoliosRoutes);
+app.use('/api/admin/tasks', adminTasksRoutes);
+app.use('/api/admin/users', adminUsersRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Root API endpoint

@@ -25,9 +25,39 @@ export const authenticateAdmin = (req, res, next) => {
 // Generate JWT token
 export const generateToken = (user) => {
   return jwt.sign(
-    { id: user.id, username: user.username, email: user.email },
+    { id: user.id, username: user.username, email: user.email, role: user.role || 'task_creator' },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
+};
+
+// Role-based permission middleware
+export const requireRole = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    const userRole = req.user.role || 'task_creator';
+    
+    if (!allowedRoles.includes(userRole)) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    
+    next();
+  };
+};
+
+// Permission helpers
+export const canManageAllTasks = (user) => {
+  return user.role === 'admin' || user.role === 'task_manager';
+};
+
+export const canCreateTasks = (user) => {
+  return user.role === 'admin' || user.role === 'task_manager' || user.role === 'task_creator';
+};
+
+export const canUpdateOwnTasks = (user) => {
+  return user.role === 'admin' || user.role === 'task_manager' || user.role === 'task_creator';
 };
 

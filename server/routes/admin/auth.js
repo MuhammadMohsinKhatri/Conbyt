@@ -14,7 +14,7 @@ router.post('/register', async (req, res) => {
     return res.status(403).json({ error: 'Registration is disabled in production' });
   }
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, role } = req.body;
 
     if (!username || !email || !password) {
       return res.status(400).json({ error: 'All fields are required' });
@@ -23,6 +23,11 @@ router.post('/register', async (req, res) => {
     if (password.length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
+
+    // Validate role if provided
+    const userRole = role && ['admin', 'task_manager', 'task_creator'].includes(role) 
+      ? role 
+      : 'task_creator';
 
     // Check if user exists (support both table names)
     const tableName = process.env.ADMIN_TABLE || 'admin_users';
@@ -40,10 +45,24 @@ router.post('/register', async (req, res) => {
 
     // Create user (support both table/column structures)
     const passwordColumn = tableName === 'admins' ? 'hashed_password' : 'password_hash';
-    await pool.execute(
-      `INSERT INTO ${tableName} (username, email, ${passwordColumn}) VALUES (?, ?, ?)`,
-      [username, email, passwordHash]
-    );
+    
+    // Check if role column exists
+    try {
+      await pool.execute(
+        `INSERT INTO ${tableName} (username, email, ${passwordColumn}, role) VALUES (?, ?, ?, ?)`,
+        [username, email, passwordHash, userRole]
+      );
+    } catch (err) {
+      // If role column doesn't exist, insert without it
+      if (err.message.includes('Unknown column') || err.code === 'ER_BAD_FIELD_ERROR') {
+        await pool.execute(
+          `INSERT INTO ${tableName} (username, email, ${passwordColumn}) VALUES (?, ?, ?)`,
+          [username, email, passwordHash]
+        );
+      } else {
+        throw err;
+      }
+    }
 
     res.status(201).json({ success: true, message: 'Admin user created successfully' });
   } catch (error) {
@@ -132,7 +151,8 @@ router.post('/login', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email
+        email: user.email,
+        role: user.role || 'task_creator'
       }
     });
   } catch (error) {
@@ -165,7 +185,12 @@ router.get('/verify', async (req, res) => {
 
     res.json({
       success: true,
-      user: users[0]
+      user: {
+        id: users[0].id,
+        username: users[0].username,
+        email: users[0].email,
+        role: users[0].role || 'task_creator'
+      }
     });
   } catch (error) {
     return res.status(401).json({ error: 'Invalid or expired token' });

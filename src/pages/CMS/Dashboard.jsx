@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { 
-  FaUsers, FaProjectDiagram, FaTasks, 
+  FaUsers, FaProjectDiagram, FaTasks, FaCheckCircle,
   FaDollarSign, FaFolderOpen, FaFileAlt, FaEnvelope,
-  FaPlus, FaSignOutAlt, FaUserCircle, FaChartLine, FaHome, FaBars, FaTimes
+  FaPlus, FaSignOutAlt, FaUserCircle, FaChartLine, FaHome, FaBars, FaTimes, FaUserShield
 } from 'react-icons/fa';
 import { fetchAdminBlogs, fetchAdminClients, fetchAdminProjects, fetchAdminPayments } from '../../utils/api.js';
 
@@ -84,7 +84,8 @@ const Dashboard = () => {
   const menuItems = [
     { icon: FaUsers, title: 'Clients', path: '/cms/clients', color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
     { icon: FaProjectDiagram, title: 'Projects', path: '/cms/projects', color: 'text-purple-400', bgColor: 'bg-purple-500/20' },
-    { icon: FaTasks, title: 'Milestones', path: '/cms/milestones', color: 'text-green-400', bgColor: 'bg-green-500/20' },
+    { icon: FaTasks, title: 'Tasks', path: '/cms/tasks', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20' },
+    { icon: FaCheckCircle, title: 'Milestones', path: '/cms/milestones', color: 'text-green-400', bgColor: 'bg-green-500/20' },
     { icon: FaDollarSign, title: 'Payments', path: '/cms/payments', color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' },
     { icon: FaFolderOpen, title: 'Portfolios', path: '/cms/portfolios', color: 'text-pink-400', bgColor: 'bg-pink-500/20' },
     { icon: FaFileAlt, title: 'Blogs', path: '/cms/blogs', color: 'text-indigo-400', bgColor: 'bg-indigo-500/20' },
@@ -161,6 +162,20 @@ const Dashboard = () => {
               </Link>
             );
           })}
+          {user?.role === 'admin' && (
+            <Link
+              to="/cms/users"
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition ${
+                location.pathname.startsWith('/cms/users')
+                  ? 'bg-accent/20 text-accent border-l-4 border-accent'
+                  : 'text-white/70 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <FaUserShield className="text-lg flex-shrink-0" />
+              <span className="font-medium">Users</span>
+            </Link>
+          )}
         </nav>
       </aside>
 

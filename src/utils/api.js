@@ -526,3 +526,104 @@ export const deleteAdminPortfolio = async (id, token) => {
   return response.json();
 };
 
+// Tasks API functions
+export const fetchAdminTasks = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/tasks`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch tasks');
+  return response.json();
+};
+
+export const fetchAdminTask = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/tasks/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch task');
+  return response.json();
+};
+
+export const createAdminTask = async (taskData, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/tasks`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(taskData)
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create task');
+  }
+  return response.json();
+};
+
+export const updateAdminTask = async (id, taskData, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/tasks/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(taskData)
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update task');
+  }
+  return response.json();
+};
+
+export const deleteAdminTask = async (id, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/tasks/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to delete task');
+  return response.json();
+};
+
+export const fetchAdminUsers = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/tasks/users/list`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch users');
+  return response.json();
+};
+
+// User Management API functions (admin only)
+export const fetchAllAdminUsers = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/users`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to fetch users');
+  return response.json();
+};
+
+export const updateAdminUserRole = async (userId, role, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/role`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ role })
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update user role');
+  }
+  return response.json();
+};
+
