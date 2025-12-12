@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUser, FaEdit, FaShieldAlt, FaUserCheck, FaUserPlus, FaKey, FaTrash } from 'react-icons/fa';
+import { FaUser, FaEdit, FaShieldAlt, FaUserCheck, FaUserPlus, FaKey, FaTrash, FaArrowLeft } from 'react-icons/fa';
 import { fetchAllAdminUsers, updateAdminUserRole, updateUserPermissions } from '../../utils/api.js';
 import { useToast } from '../../contexts/ToastContext';
 import PermissionManager from '../../components/CMS/PermissionManager';
@@ -172,6 +172,13 @@ const Users = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
+          <button
+            onClick={() => navigate('/cms/dashboard')}
+            className="flex items-center gap-2 text-white/70 hover:text-white mb-4 transition-colors"
+          >
+            <FaArrowLeft className="text-sm" />
+            <span className="text-sm font-medium">Back to Dashboard</span>
+          </button>
           <h1 className="text-3xl font-bold text-white mb-2">User Management</h1>
           <p className="text-white/70">Manage user roles and section-based permissions</p>
         </div>
