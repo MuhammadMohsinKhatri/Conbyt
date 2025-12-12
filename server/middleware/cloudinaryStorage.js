@@ -65,14 +65,6 @@ export const uploadPortfolioImage = multer({
   }
 });
 
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import multerDiskStorage from 'multer';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
