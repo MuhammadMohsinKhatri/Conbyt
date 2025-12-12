@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   FaPlus, FaEdit, FaTrash, FaUser, FaCalendar, FaFlag,
   FaCheckCircle, FaSpinner, FaEye, FaTimes, FaSearch, FaFilter,
-  FaList, FaTh, FaDownload, FaFileCsv, FaFileExcel
+  FaList, FaTh, FaDownload, FaFileCsv, FaFileExcel, FaArrowLeft
 } from 'react-icons/fa';
 import { 
   fetchAdminTasks, createAdminTask, updateAdminTask, deleteAdminTask, 
@@ -323,6 +323,15 @@ const Tasks = () => {
     <div className="min-h-screen bg-primary p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
+        <div className="mb-6">
+          <button
+            onClick={() => navigate('/cms/dashboard')}
+            className="flex items-center gap-2 text-white/70 hover:text-white mb-4 transition-colors"
+          >
+            <FaArrowLeft className="text-sm" />
+            <span className="text-sm font-medium">Back to Dashboard</span>
+          </button>
+        </div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Task Board</h1>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { FaArrowLeft, FaCalendar, FaUser, FaClock, FaTag, FaShare, FaFacebook, FaTwitter, FaLinkedin } from "react-icons/fa";
+import { FaArrowLeft, FaCalendar, FaUser, FaClock, FaTag, FaShare, FaFacebook, FaTwitter, FaLinkedin, FaImage } from "react-icons/fa";
 import { fetchBlogBySlug } from "../utils/api";
 
 import blog1 from "../assets/blogs/blog1.webp";
@@ -447,12 +447,11 @@ const BlogDetail = () => {
     return imagePath.startsWith('/') ? imagePath : `/uploads/${imagePath}`;
   };
 
-  // Default fallback image
-  const defaultImage = 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
-
   // Format blog data from API or use hardcoded structure
   const heroImageUrl = getImageUrl(blog.image_url);
   const hasImageUrl = !!blog.image_url && blog.image_url.trim() !== '';
+  const authorImageUrl = blog.author_avatar ? getImageUrl(blog.author_avatar) : null;
+  const hasAuthorImage = !!blog.author_avatar && blog.author_avatar.trim() !== '';
   
   // Debug logging
   if (blog.id) {
@@ -460,18 +459,21 @@ const BlogDetail = () => {
       'image_url from DB': blog.image_url,
       'processed URL': heroImageUrl,
       'hasImageUrl': hasImageUrl,
-      'will use': hasImageUrl ? heroImageUrl : defaultImage
+      'author_avatar from DB': blog.author_avatar,
+      'authorImageUrl': authorImageUrl,
+      'hasAuthorImage': hasAuthorImage
     });
   }
   
   const data = blog.id ? {
     title: blog.title,
     subtitle: blog.excerpt || '',
-    heroImage: heroImageUrl || defaultImage,
+    heroImage: heroImageUrl,
     hasImageUrl: hasImageUrl,
     category: blog.category || 'Uncategorized',
     author: blog.author_name || 'Admin',
-    authorImage: getImageUrl(blog.author_avatar) || defaultImage,
+    authorImage: authorImageUrl,
+    hasAuthorImage: hasAuthorImage,
     authorBio: blog.author_name ? `${blog.author_name} - Author` : 'Content creator and writer',
     date: blog.date ? new Date(blog.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date().toLocaleDateString(),
     readTime: blog.read_time ? `${blog.read_time} min read` : '5 min read',
@@ -514,18 +516,19 @@ const BlogDetail = () => {
             {/* Author and Meta Info */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
-                {data.authorImage ? (
+                {data.hasAuthorImage && data.authorImage ? (
                   <img 
                     src={data.authorImage} 
                     alt={data.author}
                     className="w-10 h-10 rounded-full object-cover"
                     onError={(e) => {
+                      console.error('Failed to load author avatar:', data.authorImage);
                       e.target.style.display = 'none';
                       e.target.nextElementSibling.style.display = 'flex';
                     }}
                   />
                 ) : null}
-                <div className={`w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center ${data.authorImage ? 'hidden' : ''}`}>
+                <div className={`w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center ${data.hasAuthorImage && data.authorImage ? 'hidden' : ''}`}>
                   <FaUser className="text-accent" />
                 </div>
                 <div>
@@ -560,30 +563,31 @@ const BlogDetail = () => {
       {/* Hero Image */}
       <section className="max-w-4xl mx-auto px-6 py-8">
         <div className="w-full h-64 md:h-80 bg-gradient-to-br from-secondary/30 to-surface rounded-xl overflow-hidden">
-          {data.hasImageUrl ? (
+          {data.hasImageUrl && data.heroImage ? (
             <img 
               key={data.heroImage} 
               src={data.heroImage} 
               alt={data.title}
               className="w-full h-full object-cover"
               onError={(e) => {
-                // Only fall back if the current src is not already the default
-                const currentSrc = e.target.src;
-                if (!currentSrc.includes('unsplash.com')) {
-                  console.warn('Failed to load uploaded blog image:', data.heroImage, 'Falling back to default');
-                  e.target.src = defaultImage;
-                }
+                console.error('Failed to load uploaded blog image:', data.heroImage);
+                // Hide the image and show placeholder instead
+                e.target.style.display = 'none';
+                const placeholder = e.target.parentElement.querySelector('.image-placeholder');
+                if (placeholder) placeholder.style.display = 'flex';
               }}
               onLoad={() => {
                 console.log('✅ Successfully loaded blog image:', data.heroImage);
               }}
             />
-          ) : (
-            <img 
-              src={defaultImage} 
-              alt={data.title}
-              className="w-full h-full object-cover"
-            />
+          ) : null}
+          {(!data.hasImageUrl || !data.heroImage) && (
+            <div className="image-placeholder w-full h-full flex items-center justify-center">
+              <div className="text-center">
+                <FaImage className="text-4xl text-white/30 mx-auto mb-2" />
+                <p className="text-white/50 text-sm">No featured image</p>
+              </div>
+            </div>
           )}
         </div>
       </section>
