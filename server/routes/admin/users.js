@@ -11,23 +11,35 @@ router.get('/', authenticateAdmin, requireRole('admin'), async (req, res) => {
       'SELECT id, username, email, role, created_at FROM admin_users ORDER BY username ASC'
     );
     
-    // Fetch permissions for each user
+    // Fetch permissions for each user (handle missing table gracefully)
     const usersWithPermissions = await Promise.all(
       users.map(async (user) => {
-        const [permissions] = await pool.execute(
-          'SELECT section, permissions FROM user_permissions WHERE user_id = ?',
-          [user.id]
-        );
-        
-        const permissionsMap = {};
-        permissions.forEach(p => {
-          permissionsMap[p.section] = JSON.parse(p.permissions);
-        });
-        
-        return {
-          ...user,
-          permissions: permissionsMap
-        };
+        try {
+          const [permissions] = await pool.execute(
+            'SELECT section, permissions FROM user_permissions WHERE user_id = ?',
+            [user.id]
+          );
+          
+          const permissionsMap = {};
+          permissions.forEach(p => {
+            permissionsMap[p.section] = JSON.parse(p.permissions);
+          });
+          
+          return {
+            ...user,
+            permissions: permissionsMap
+          };
+        } catch (error) {
+          // If table doesn't exist, return user without permissions
+          if (error.code === 'ER_NO_SUCH_TABLE') {
+            console.warn('⚠️  user_permissions table does not exist. Run migration: npm run migrate-user-permissions');
+            return {
+              ...user,
+              permissions: {}
+            };
+          }
+          throw error;
+        }
       })
     );
     
@@ -93,16 +105,25 @@ router.get('/:id', authenticateAdmin, requireRole('admin'), async (req, res) => 
       return res.status(404).json({ error: 'User not found' });
     }
     
-    // Fetch permissions
-    const [permissions] = await pool.execute(
-      'SELECT section, permissions FROM user_permissions WHERE user_id = ?',
-      [userId]
-    );
-    
-    const permissionsMap = {};
-    permissions.forEach(p => {
-      permissionsMap[p.section] = JSON.parse(p.permissions);
-    });
+    // Fetch permissions (handle missing table gracefully)
+    let permissionsMap = {};
+    try {
+      const [permissions] = await pool.execute(
+        'SELECT section, permissions FROM user_permissions WHERE user_id = ?',
+        [userId]
+      );
+      
+      permissions.forEach(p => {
+        permissionsMap[p.section] = JSON.parse(p.permissions);
+      });
+    } catch (error) {
+      // If table doesn't exist, return empty permissions
+      if (error.code === 'ER_NO_SUCH_TABLE') {
+        console.warn('⚠️  user_permissions table does not exist. Run migration: npm run migrate-user-permissions');
+      } else {
+        throw error;
+      }
+    }
     
     res.json({
       ...users[0],
@@ -132,6 +153,18 @@ router.put('/:id/permissions', authenticateAdmin, requireRole('admin'), async (r
     
     if (users.length === 0) {
       return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Check if user_permissions table exists
+    try {
+      await pool.execute('SELECT 1 FROM user_permissions LIMIT 1');
+    } catch (error) {
+      if (error.code === 'ER_NO_SUCH_TABLE') {
+        return res.status(500).json({ 
+          error: 'Permissions table does not exist. Please run migration: npm run migrate-user-permissions' 
+        });
+      }
+      throw error;
     }
     
     // Update permissions for each section

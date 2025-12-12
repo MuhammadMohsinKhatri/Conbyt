@@ -14,7 +14,8 @@
     "migrate": "node scripts/migrate.js",
     "migrate-columns": "node scripts/add-image-url-column.js",
     "migrate-tasks": "node database/migrate-production.js",
-    "migrate-focus-keyword": "node database/migrate-focus-keyword.js"
+    "migrate-focus-keyword": "node database/migrate-focus-keyword.js",
+    "migrate-user-permissions": "node database/migrate-user-permissions.js"
   },
   "dependencies": {
     "express": "^4.18.2",
