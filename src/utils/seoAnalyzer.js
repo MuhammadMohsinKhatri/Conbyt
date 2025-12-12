@@ -211,44 +211,59 @@ export const analyzeImages = (content, focusKeyword = '') => {
 };
 
 export const calculateOverallSEOScore = (formData, focusKeyword = '') => {
-  const titleAnalysis = analyzeTitle(formData.meta_title || formData.title, focusKeyword);
-  const metaAnalysis = analyzeMetaDescription(formData.meta_description, focusKeyword);
+  // Use focus_keyword from formData if focusKeyword parameter is empty
+  const effectiveKeyword = focusKeyword || formData.focus_keyword || '';
+  
+  const titleAnalysis = analyzeTitle(formData.meta_title || formData.title, effectiveKeyword);
+  const metaAnalysis = analyzeMetaDescription(formData.meta_description, effectiveKeyword);
   const contentAnalysis = analyzeContent(formData.content);
-  const keywordAnalysis = analyzeKeywordDensity(formData.content, focusKeyword);
+  const keywordAnalysis = analyzeKeywordDensity(formData.content, effectiveKeyword);
   const headingAnalysis = analyzeHeadings(formData.content);
   const linkAnalysis = analyzeLinks(formData.content);
-  const imageAnalysis = analyzeImages(formData.content, focusKeyword);
+  const imageAnalysis = analyzeImages(formData.content, effectiveKeyword);
+  
+  // Adjust weights based on whether focus keyword is provided
+  const hasKeyword = effectiveKeyword && effectiveKeyword.length > 0;
   
   const weights = {
     title: 0.15,
     meta: 0.15,
     content: 0.20,
-    keyword: 0.15,
+    keyword: hasKeyword ? 0.15 : 0.05, // Reduce keyword weight if no focus keyword
     heading: 0.10,
     link: 0.10,
     image: 0.05,
     slug: formData.slug ? 0.05 : 0,
-    ogImage: formData.og_image ? 0.05 : 0
+    ogImage: formData.og_image ? 0.05 : 0,
+    // Add bonus points for basic requirements when no keyword
+    basic: !hasKeyword ? 0.10 : 0
   };
   
+  // Calculate scores - be more lenient when no focus keyword
   const scores = {
-    title: titleAnalysis.score,
-    meta: metaAnalysis.score,
+    title: titleAnalysis.score || (formData.meta_title || formData.title ? 70 : 0),
+    meta: metaAnalysis.score || (formData.meta_description ? 70 : 0),
     content: contentAnalysis.score,
-    keyword: keywordAnalysis.score,
-    heading: headingAnalysis.score,
-    link: linkAnalysis.score,
-    image: imageAnalysis.score,
+    keyword: hasKeyword ? keywordAnalysis.score : 100, // Give full score if no keyword required
+    heading: headingAnalysis.score || 50, // More lenient
+    link: linkAnalysis.score || 50, // More lenient
+    image: imageAnalysis.score || 80, // More lenient
     slug: formData.slug ? 100 : 0,
-    ogImage: formData.og_image ? 100 : 0
+    ogImage: formData.og_image ? 100 : 0,
+    basic: !hasKeyword && (formData.title && formData.meta_description && formData.content) ? 100 : 0
   };
   
   const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0);
   const weightedScore = Object.keys(scores).reduce((sum, key) => {
-    return sum + (scores[key] * weights[key]);
+    return sum + (scores[key] * (weights[key] || 0));
   }, 0) / totalWeight;
   
-  return Math.round(weightedScore);
+  // Ensure minimum score of 50 if basic fields are filled (even without keyword)
+  const finalScore = !hasKeyword && formData.title && formData.meta_description && formData.content
+    ? Math.max(weightedScore, 50)
+    : weightedScore;
+  
+  return Math.round(finalScore);
 };
 
 export const generateSchemaMarkup = (formData) => {

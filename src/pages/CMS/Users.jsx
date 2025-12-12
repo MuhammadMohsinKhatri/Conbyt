@@ -1,14 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUser, FaEdit, FaShieldAlt, FaUserCheck, FaUserPlus } from 'react-icons/fa';
-import { fetchAllAdminUsers, updateAdminUserRole } from '../../utils/api.js';
+import { FaUser, FaEdit, FaShieldAlt, FaUserCheck, FaUserPlus, FaKey, FaTrash } from 'react-icons/fa';
+import { fetchAllAdminUsers, updateAdminUserRole, updateUserPermissions } from '../../utils/api.js';
 import { useToast } from '../../contexts/ToastContext';
+import PermissionManager from '../../components/CMS/PermissionManager';
+
+const SECTIONS = {
+  tasks: { label: 'Tasks', icon: '📋' },
+  projects: { label: 'Projects', icon: '📁' },
+  clients: { label: 'Clients', icon: '👥' },
+  portfolios: { label: 'Portfolios', icon: '🎨' },
+  blogs: { label: 'Blogs', icon: '📝' },
+  payments: { label: 'Payments', icon: '💰' },
+  milestones: { label: 'Milestones', icon: '🎯' },
+  users: { label: 'Users', icon: '👤' }
+};
 
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingUser, setEditingUser] = useState(null);
+  const [managingPermissions, setManagingPermissions] = useState(null);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const toast = useToast();
@@ -76,6 +89,21 @@ const Users = () => {
     }
   };
 
+  const handlePermissionsSave = async (permissions) => {
+    try {
+      const token = localStorage.getItem('cms_token');
+      await updateUserPermissions(managingPermissions.id, permissions, token);
+      toast.success('Permissions updated successfully');
+      await fetchUsers();
+      setManagingPermissions(null);
+      setError('');
+    } catch (error) {
+      const errorMsg = error.message || 'Failed to update permissions';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    }
+  };
+
   const getRoleBadge = (role) => {
     const badges = {
       admin: { color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: FaShieldAlt, label: 'Admin' },
@@ -94,13 +122,37 @@ const Users = () => {
     );
   };
 
-  const getRoleDescription = (role) => {
-    const descriptions = {
-      admin: 'Full access to all features and user management',
-      task_manager: 'Can create, update, and manage all tasks',
-      task_creator: 'Can create and update only their own tasks'
-    };
-    return descriptions[role] || descriptions.task_creator;
+  const formatPermissions = (userPermissions) => {
+    if (!userPermissions || Object.keys(userPermissions).length === 0) {
+      return <span className="text-white/40 text-sm">No custom permissions</span>;
+    }
+
+    const sections = Object.keys(userPermissions);
+    if (sections.length === 0) return null;
+
+    return (
+      <div className="flex flex-wrap gap-2">
+        {sections.map(sectionId => {
+          const section = SECTIONS[sectionId];
+          const perms = userPermissions[sectionId] || [];
+          const hasAll = perms.length === 4; // view, create, edit, delete
+          
+          return (
+            <div
+              key={sectionId}
+              className="bg-secondary/30 border border-white/10 rounded px-2 py-1 text-xs"
+              title={`${section?.label || sectionId}: ${hasAll ? 'All' : perms.join(', ')}`}
+            >
+              <span className="mr-1">{section?.icon || '📌'}</span>
+              <span className="text-white/70">{section?.label || sectionId}</span>
+              <span className="text-white/50 ml-1">
+                ({hasAll ? 'All' : perms.length})
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   if (loading) {
@@ -117,11 +169,11 @@ const Users = () => {
 
   return (
     <div className="min-h-screen bg-primary p-4 md:p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">User Management</h1>
-          <p className="text-white/70">Manage user roles and permissions</p>
+          <p className="text-white/70">Manage user roles and section-based permissions</p>
         </div>
 
         {error && (
@@ -138,8 +190,8 @@ const Users = () => {
                 <tr>
                   <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">User</th>
                   <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Email</th>
-                  <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Current Role</th>
-                  <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Permissions</th>
+                  <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Role</th>
+                  <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Section Permissions</th>
                   <th className="px-6 py-4 text-left text-white/70 font-medium text-sm">Actions</th>
                 </tr>
               </thead>
@@ -160,12 +212,6 @@ const Users = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-white/70">{u.email}</td>
-                    <td className="px-6 py-4">
-                      {getRoleBadge(u.role || 'task_creator')}
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-white/60 text-sm">{getRoleDescription(u.role || 'task_creator')}</p>
-                    </td>
                     <td className="px-6 py-4">
                       {editingUser?.id === u.id ? (
                         <div className="flex items-center gap-2">
@@ -192,14 +238,34 @@ const Users = () => {
                           </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => setEditingUser({ id: u.id, role: u.role || 'task_creator' })}
-                          className="flex items-center gap-2 px-3 py-1 bg-secondary/50 hover:bg-secondary rounded-lg text-white text-sm transition"
-                        >
-                          <FaEdit className="text-xs" />
-                          Edit Role
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {getRoleBadge(u.role || 'task_creator')}
+                          {u.role !== 'admin' && (
+                            <button
+                              onClick={() => setEditingUser({ id: u.id, role: u.role || 'task_creator' })}
+                              className="text-white/50 hover:text-white transition"
+                              title="Edit Role"
+                            >
+                              <FaEdit className="text-xs" />
+                            </button>
+                          )}
+                        </div>
                       )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {formatPermissions(u.permissions)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setManagingPermissions(u)}
+                          className="flex items-center gap-2 px-3 py-1 bg-accent/20 hover:bg-accent/30 border border-accent/30 rounded-lg text-white text-sm transition"
+                          title="Manage Permissions"
+                        >
+                          <FaKey className="text-xs" />
+                          Permissions
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -208,7 +274,7 @@ const Users = () => {
           </div>
         </div>
 
-        {/* Role Information */}
+        {/* Info Cards */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-surface rounded-lg border border-white/10 p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -216,34 +282,43 @@ const Users = () => {
               <h3 className="text-white font-semibold">Admin</h3>
             </div>
             <p className="text-white/60 text-sm">
-              Full access to all features, user management, and system settings.
+              Full access to all features, user management, and system settings. Can manage all permissions.
             </p>
           </div>
           
           <div className="bg-surface rounded-lg border border-white/10 p-4">
             <div className="flex items-center gap-2 mb-2">
-              <FaUserCheck className="text-blue-400" />
-              <h3 className="text-white font-semibold">Task Manager</h3>
+              <FaKey className="text-blue-400" />
+              <h3 className="text-white font-semibold">Section Permissions</h3>
             </div>
             <p className="text-white/60 text-sm">
-              Can create, update, delete, and manage all tasks. Can assign tasks to any user.
+              Grant specific access to sections (Tasks, Projects, Blogs, etc.) with granular permissions (View, Create, Edit, Delete).
             </p>
           </div>
           
           <div className="bg-surface rounded-lg border border-white/10 p-4">
             <div className="flex items-center gap-2 mb-2">
-              <FaUserPlus className="text-green-400" />
-              <h3 className="text-white font-semibold">Task Creator</h3>
+              <FaUserCheck className="text-green-400" />
+              <h3 className="text-white font-semibold">Flexible Access</h3>
             </div>
             <p className="text-white/60 text-sm">
-              Can create tasks and update only their own tasks or tasks assigned to them.
+              Mix and match sections and permissions. Users can have access to one or multiple sections with different permission levels.
             </p>
           </div>
         </div>
       </div>
+
+      {/* Permission Manager Modal */}
+      {managingPermissions && (
+        <PermissionManager
+          user={managingPermissions}
+          currentUserRole={user?.role}
+          onSave={handlePermissionsSave}
+          onCancel={() => setManagingPermissions(null)}
+        />
+      )}
     </div>
   );
 };
 
 export default Users;
-

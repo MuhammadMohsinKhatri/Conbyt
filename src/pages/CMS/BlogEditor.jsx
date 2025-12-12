@@ -27,6 +27,7 @@ const BlogEditor = () => {
     meta_title: '',
     meta_description: '',
     meta_keywords: '',
+    focus_keyword: '',
     og_image: '',
     canonical_url: '',
     published: false,

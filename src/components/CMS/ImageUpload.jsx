@@ -20,9 +20,9 @@ const ImageUpload = ({
   const fileInputRef = useRef(null);
   const urlInputRef = useRef(null);
 
-  // Sync with value prop changes (e.g., when editing)
+  // Sync with value prop changes (e.g., when editing) - only update if value actually changed
   useEffect(() => {
-    if (value !== undefined) {
+    if (value !== undefined && value !== imageUrl) {
       setImageUrl(value || '');
       // Resolve preview for relative paths
       try {
@@ -41,7 +41,7 @@ const ImageUpload = ({
         setShowAltWarning(false);
       }
     }
-  }, [value, altText]);
+  }, [value]); // Removed altText from dependencies to prevent unnecessary updates
 
   // Sync with external alt text prop
   useEffect(() => {

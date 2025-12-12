@@ -657,3 +657,33 @@ export const updateAdminUserRole = async (userId, role, token) => {
   return response.json();
 };
 
+export const updateUserPermissions = async (userId, permissions, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/permissions`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ permissions })
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update permissions');
+  }
+  return response.json();
+};
+
+export const deleteUserSectionPermissions = async (userId, section, token) => {
+  const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/permissions/${section}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete permissions');
+  }
+  return response.json();
+};
+

@@ -57,6 +57,7 @@ router.post('/', async (req, res) => {
       meta_title,
       meta_description,
       meta_keywords,
+      focus_keyword,
       og_image,
       canonical_url,
       published,
@@ -71,15 +72,15 @@ router.post('/', async (req, res) => {
     const [result] = await pool.execute(
       `INSERT INTO blog_posts (
         title, excerpt, content, image_url, category, author_name, author_avatar,
-        date, read_time, slug, meta_title, meta_description, meta_keywords,
+        date, read_time, slug, meta_title, meta_description, meta_keywords, focus_keyword,
         og_image, canonical_url, published, featured
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         title, excerpt || '', content, image_url || null, category || '',
         author_name || null, author_avatar || null,
         date || new Date().toISOString().split('T')[0],
         read_time || null, slug, meta_title || null, meta_description || null,
-        meta_keywords || null, og_image || null, canonical_url || null,
+        meta_keywords || null, focus_keyword || null, og_image || null, canonical_url || null,
         published || false, featured || false
       ]
     );
@@ -116,6 +117,7 @@ router.put('/:id', async (req, res) => {
       meta_title,
       meta_description,
       meta_keywords,
+      focus_keyword,
       og_image,
       canonical_url,
       published,
@@ -131,7 +133,7 @@ router.put('/:id', async (req, res) => {
       `UPDATE blog_posts SET
         title = ?, excerpt = ?, content = ?, image_url = ?, category = ?,
         author_name = ?, author_avatar = ?, date = ?, read_time = ?, slug = ?,
-        meta_title = ?, meta_description = ?, meta_keywords = ?,
+        meta_title = ?, meta_description = ?, meta_keywords = ?, focus_keyword = ?,
         og_image = ?, canonical_url = ?, published = ?, featured = ?
       WHERE id = ?`,
       [
@@ -139,7 +141,7 @@ router.put('/:id', async (req, res) => {
         author_name || null, author_avatar || null,
         date || new Date().toISOString().split('T')[0],
         read_time || null, slug, meta_title || null, meta_description || null,
-        meta_keywords || null, og_image || null, canonical_url || null,
+        meta_keywords || null, focus_keyword || null, og_image || null, canonical_url || null,
         published || false, featured || false, id
       ]
     );

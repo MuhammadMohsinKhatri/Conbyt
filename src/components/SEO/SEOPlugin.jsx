@@ -4,10 +4,19 @@ import { calculateOverallSEOScore, generateSchemaMarkup } from '../../utils/seoA
 
 const SEOPlugin = ({ formData, onUpdate }) => {
   const [seoScore, setSeoScore] = useState(0);
-  const [focusKeyword, setFocusKeyword] = useState('');
   const [analysis, setAnalysis] = useState({});
   const [activeTab, setActiveTab] = useState('general');
   const [previewMode, setPreviewMode] = useState('google');
+  
+  // Use focus_keyword from formData if available, otherwise use local state
+  const focusKeyword = formData.focus_keyword || '';
+
+  // Load focus keyword from formData when editing
+  useEffect(() => {
+    if (formData.focus_keyword && formData.focus_keyword !== focusKeyword) {
+      // Focus keyword is already in formData, no need for local state
+    }
+  }, [formData.focus_keyword]);
 
   useEffect(() => {
     if (formData) {
@@ -20,6 +29,9 @@ const SEOPlugin = ({ formData, onUpdate }) => {
 
   const calculateSEOScore = () => {
     const positions = analyzeKeywordPositions();
+    const hasKeyword = focusKeyword && focusKeyword.length > 0;
+    
+    // Make checks more lenient when no focus keyword
     const checks = {
       title: formData.title && formData.title.length >= 30 && formData.title.length <= 60,
       metaTitle: formData.meta_title && formData.meta_title.length >= 30 && formData.meta_title.length <= 60,
@@ -27,16 +39,17 @@ const SEOPlugin = ({ formData, onUpdate }) => {
       slug: formData.slug && formData.slug.length > 0,
       content: formData.content && formData.content.length >= 300,
       image: formData.image_url && formData.image_url.length > 0,
-      focusKeyword: focusKeyword && focusKeyword.length > 0,
-      keywordInTitle: positions.keywordInTitle,
-      keywordInMeta: positions.keywordInMeta,
-      keywordInHeading: positions.keywordInHeading,
-      keywordInIntro: positions.keywordInIntro,
-      headings: checkHeadings(),
-      internalLinks: checkInternalLinks(),
-      externalLinks: checkExternalLinks(),
-      imageAlt: checkImageAlt(),
-      readability: checkReadability(),
+      focusKeyword: hasKeyword,
+      // Only check keyword positions if keyword is provided
+      keywordInTitle: hasKeyword ? positions.keywordInTitle : true,
+      keywordInMeta: hasKeyword ? positions.keywordInMeta : true,
+      keywordInHeading: hasKeyword ? positions.keywordInHeading : true,
+      keywordInIntro: hasKeyword ? positions.keywordInIntro : true,
+      headings: checkHeadings() || !formData.content, // More lenient
+      internalLinks: checkInternalLinks() || !formData.content, // More lenient
+      externalLinks: checkExternalLinks() || !formData.content, // More lenient
+      imageAlt: checkImageAlt() || !formData.content, // More lenient
+      readability: checkReadability() || !formData.content, // More lenient
       wordCount: formData.content && formData.content.split(/\s+/).length >= 300,
       metaKeywords: formData.meta_keywords && formData.meta_keywords.length > 0,
       ogImage: formData.og_image && formData.og_image.length > 0,
@@ -45,7 +58,12 @@ const SEOPlugin = ({ formData, onUpdate }) => {
 
     const totalChecks = Object.keys(checks).length;
     const passedChecks = Object.values(checks).filter(Boolean).length;
-    const score = Math.round((passedChecks / totalChecks) * 100);
+    let score = Math.round((passedChecks / totalChecks) * 100);
+    
+    // Boost score if basic requirements are met (even without keyword)
+    if (!hasKeyword && formData.title && formData.meta_description && formData.content) {
+      score = Math.max(score, 65); // Minimum 65 if basics are filled
+    }
 
     setSeoScore(score);
     setAnalysis(checks);
@@ -56,7 +74,7 @@ const SEOPlugin = ({ formData, onUpdate }) => {
   };
 
   const analyzeKeywordPositions = () => {
-    const keyword = focusKeyword && focusKeyword.toLowerCase();
+    const keyword = (focusKeyword || formData.focus_keyword) && (focusKeyword || formData.focus_keyword).toLowerCase();
     const getText = str => (str || '').toLowerCase();
     const firstParagraph = formData.content ? getText(formData.content.split(/\n/)[0] || '') : '';
     // Only matches heading tags in HTML, basic level
@@ -249,7 +267,12 @@ const SEOPlugin = ({ formData, onUpdate }) => {
           <input
             type="text"
             value={focusKeyword}
-            onChange={(e) => setFocusKeyword(e.target.value)}
+            onChange={(e) => {
+              const newKeyword = e.target.value;
+              if (onUpdate) {
+                onUpdate({ ...formData, focus_keyword: newKeyword });
+              }
+            }}
             placeholder="Enter your focus keyword"
             className="w-full pl-10 pr-4 py-3 bg-primary/80 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-accent"
           />
