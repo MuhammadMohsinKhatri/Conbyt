@@ -31,6 +31,23 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Redirect www.conbyt.com to conbyt.com
+app.use((req, res, next) => {
+  const host = req.get('host') || req.get('x-forwarded-host') || '';
+  
+  // Check if the request is coming from www.conbyt.com
+  if (host.startsWith('www.conbyt.com')) {
+    // Preserve the protocol (http/https)
+    const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+    // Preserve the path and query string
+    const url = req.originalUrl || req.url;
+    // Redirect to non-www version
+    return res.redirect(301, `${protocol}://conbyt.com${url}`);
+  }
+  
+  next();
+});
+
 // Middleware
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
