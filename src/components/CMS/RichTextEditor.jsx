@@ -94,7 +94,7 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
     'script', 'indent', 'direction'
   ];
 
-  // Custom styles for dark theme
+  // Custom styles for dark theme with enhanced color pickers
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -131,6 +131,7 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
       .ql-snow .ql-picker-options {
         background: rgba(35, 35, 43, 0.95);
         border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       }
       .ql-snow .ql-picker-item {
         color: rgba(255, 255, 255, 0.8);
@@ -141,6 +142,106 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
       .ql-snow .ql-picker-item.ql-selected {
         background: rgba(124, 58, 237, 0.3);
         color: #7c3aed;
+      }
+      /* Enhanced Color Picker Styles - Word-like */
+      .ql-snow .ql-picker.ql-color,
+      .ql-snow .ql-picker.ql-background {
+        width: 42px;
+      }
+      .ql-snow .ql-picker.ql-color .ql-picker-label,
+      .ql-snow .ql-picker.ql-background .ql-picker-label {
+        width: 28px;
+        height: 24px;
+        padding: 2px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+        background: #000;
+        position: relative;
+      }
+      .ql-snow .ql-picker.ql-color .ql-picker-label svg,
+      .ql-snow .ql-picker.ql-background .ql-picker-label svg {
+        display: none;
+      }
+      .ql-snow .ql-picker.ql-color .ql-picker-label::after,
+      .ql-snow .ql-picker.ql-background .ql-picker-label::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        border-radius: 2px;
+        background: currentColor;
+      }
+      .ql-snow .ql-picker.ql-color .ql-picker-label::before,
+      .ql-snow .ql-picker.ql-background .ql-picker-label::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 3px;
+        pointer-events: none;
+      }
+      .ql-snow .ql-picker.ql-color:hover .ql-picker-label,
+      .ql-snow .ql-picker.ql-background:hover .ql-picker-label {
+        border-color: rgba(124, 58, 237, 0.8);
+        box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.5);
+      }
+      /* Color picker dropdown - Word-like grid */
+      .ql-snow .ql-picker.ql-color .ql-picker-options,
+      .ql-snow .ql-picker.ql-background .ql-picker-options {
+        width: 152px;
+        padding: 8px;
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+      }
+      .ql-snow .ql-picker.ql-color .ql-picker-item,
+      .ql-snow .ql-picker.ql-background .ql-picker-item {
+        width: 18px;
+        height: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 2px;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .ql-snow .ql-picker.ql-color .ql-picker-item:hover,
+      .ql-snow .ql-picker.ql-background .ql-picker-item:hover {
+        border-color: rgba(255, 255, 255, 0.6);
+        transform: scale(1.1);
+        z-index: 1;
+        position: relative;
+      }
+      .ql-snow .ql-picker.ql-color .ql-picker-item.ql-selected,
+      .ql-snow .ql-picker.ql-background .ql-picker-item.ql-selected {
+        border-color: rgba(124, 58, 237, 0.8);
+        box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.4);
+      }
+      /* More Colors option styling */
+      .ql-snow .ql-picker.ql-color .ql-picker-item[data-value="more"],
+      .ql-snow .ql-picker.ql-background .ql-picker-item[data-value="more"] {
+        grid-column: 1 / -1;
+        width: 100%;
+        height: 28px;
+        background: rgba(124, 58, 237, 0.2);
+        border-color: rgba(124, 58, 237, 0.5);
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 12px;
+        text-align: center;
+        line-height: 28px;
+      }
+      .ql-snow .ql-picker.ql-color .ql-picker-item[data-value="more"]:hover,
+      .ql-snow .ql-picker.ql-background .ql-picker-item[data-value="more"]:hover {
+        background: rgba(124, 58, 237, 0.3);
       }
       .ql-snow a {
         color: #7c3aed;
@@ -175,6 +276,13 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
         border: 1px solid rgba(255, 255, 255, 0.2);
         color: white;
       }
+      /* Ensure color formatting is preserved in editor */
+      .ql-editor [style*="color"] {
+        color: inherit !important;
+      }
+      .ql-editor [style*="background-color"] {
+        background-color: inherit !important;
+      }
     `;
     document.head.appendChild(style);
     return () => {
@@ -186,7 +294,7 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
     onChange(content);
   };
 
-  // Make links clickable in the editor
+  // Make links clickable in the editor and enhance color pickers
   useEffect(() => {
     if (quillRef.current) {
       const quill = quillRef.current.getEditor();
@@ -200,6 +308,49 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
           window.open(link.href, '_blank', 'noopener,noreferrer');
         }
       });
+
+      // Enhance color picker UI - add "More Colors" option
+      setTimeout(() => {
+        const toolbar = quillRef.current?.getEditor()?.getModule('toolbar')?.container;
+        if (toolbar) {
+          // Find color and background color pickers
+          const colorPickers = toolbar.querySelectorAll('.ql-color, .ql-background');
+          colorPickers.forEach((picker) => {
+            const options = picker.querySelector('.ql-picker-options');
+            if (options && !options.querySelector('[data-value="more"]')) {
+              // Add "More Colors" option at the end
+              const moreOption = document.createElement('span');
+              moreOption.className = 'ql-picker-item';
+              moreOption.setAttribute('data-value', 'more');
+              moreOption.setAttribute('data-label', 'More Colors...');
+              moreOption.textContent = 'More Colors...';
+              moreOption.style.cssText = 'grid-column: 1 / -1; width: 100%; height: 28px; background: rgba(124, 58, 237, 0.2); border: 1px solid rgba(124, 58, 237, 0.5); color: rgba(255, 255, 255, 0.9); font-size: 12px; text-align: center; line-height: 28px; border-radius: 2px; margin-top: 4px; cursor: pointer;';
+              moreOption.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const isBackground = picker.classList.contains('ql-background');
+                const input = document.createElement('input');
+                input.type = 'color';
+                const currentFormat = quill.getFormat();
+                input.value = isBackground 
+                  ? (currentFormat.background || '#ffffff')
+                  : (currentFormat.color || '#000000');
+                input.onchange = () => {
+                  if (isBackground) {
+                    quill.format('background', input.value);
+                  } else {
+                    quill.format('color', input.value);
+                  }
+                  // Close the picker
+                  picker.classList.remove('ql-expanded');
+                };
+                input.click();
+              });
+              options.appendChild(moreOption);
+            }
+          });
+        }
+      }, 100);
     }
   }, [value]);
 
