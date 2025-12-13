@@ -1,14 +1,14 @@
 import express from 'express';
 import pool from '../../config/database.js';
-import { authenticateAdmin } from '../../middleware/auth.js';
+import { authenticateUser, requirePermission } from '../../middleware/auth.js';
 
 const router = express.Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticateUser);
 
 // Get all portfolios with project information
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('portfolios', ['view']), async (req, res) => {
   try {
     const [rows] = await pool.execute(
       `SELECT p.*, pr.title as project_title, pr.client_id,
@@ -26,7 +26,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get single portfolio by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requirePermission('portfolios', ['view']), async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await pool.execute(
@@ -93,7 +93,7 @@ async function generateUniqueSlugExcluding(baseSlug, excludeId) {
 }
 
 // Create new portfolio
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('portfolios', ['create']), async (req, res) => {
   try {
     const {
       project_id,
@@ -150,7 +150,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update portfolio
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePermission('portfolios', ['edit']), async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -222,7 +222,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete portfolio
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('portfolios', ['delete']), async (req, res) => {
   try {
     const { id } = req.params;
     await pool.execute('DELETE FROM portfolios WHERE id = ?', [id]);

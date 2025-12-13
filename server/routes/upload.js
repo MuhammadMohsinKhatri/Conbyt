@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { authenticateAdmin } from '../middleware/auth.js';
+import { authenticateUser, requirePermission } from '../middleware/auth.js';
 import { getUploadInstance, isCloudinaryConfigured } from '../middleware/cloudinaryStorage.js';
 import cloudinary from '../config/cloudinary.js';
 import fs from 'fs';
@@ -13,10 +13,10 @@ const __dirname = path.dirname(__filename);
 const router = express.Router();
 
 // All upload routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticateUser);
 
 // Upload portfolio image
-router.post('/portfolio-image', (req, res, next) => {
+router.post('/portfolio-image', requirePermission('portfolios', ['create', 'edit']), (req, res, next) => {
   const upload = getUploadInstance('portfolio');
   
   upload.single('image')(req, res, (err) => {
@@ -76,7 +76,7 @@ router.post('/portfolio-image', (req, res, next) => {
 });
 
 // Upload general image (for blogs, etc.)
-router.post('/image', (req, res, next) => {
+router.post('/image', requirePermission('blogs', ['create', 'edit']), (req, res, next) => {
   const upload = getUploadInstance('blog');
   
   upload.single('image')(req, res, (err) => {
@@ -136,7 +136,7 @@ router.post('/image', (req, res, next) => {
 });
 
 // Delete image (cleanup when portfolio is deleted)
-router.delete('/image', authenticateAdmin, async (req, res) => {
+router.delete('/image', requirePermission('uploads', ['delete']), async (req, res) => {
   try {
     const { imageUrl } = req.body;
     

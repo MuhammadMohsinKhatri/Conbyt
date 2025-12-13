@@ -1,14 +1,14 @@
 import express from 'express';
 import pool from '../../config/database.js';
-import { authenticateAdmin } from '../../middleware/auth.js';
+import { authenticateUser, requirePermission } from '../../middleware/auth.js';
 
 const router = express.Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticateUser);
 
 // Get all projects with client information
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('projects', ['view']), async (req, res) => {
   try {
     const [rows] = await pool.execute(
       `SELECT p.*, c.name as client_name, c.company as client_company
@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get single project by ID with client and milestones info
-router.get('/:id', async (req, res) => {
+router.get('/:id', requirePermission('projects', ['view']), async (req, res) => {
   try {
     const { id } = req.params;
     const [projects] = await pool.execute(
@@ -57,7 +57,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new project
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('projects', ['create']), async (req, res) => {
   try {
     const {
       client_id,
@@ -103,7 +103,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update project
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePermission('projects', ['edit']), async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -149,7 +149,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete project
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('projects', ['delete']), async (req, res) => {
   try {
     const { id } = req.params;
     await pool.execute('DELETE FROM projects WHERE id = ?', [id]);

@@ -1,14 +1,14 @@
 import express from 'express';
 import pool from '../../config/database.js';
-import { authenticateAdmin, canManageAllTasks, canCreateTasks, canUpdateOwnTasks } from '../../middleware/auth.js';
+import { authenticateUser, requirePermission } from '../../middleware/auth.js';
 
 const router = express.Router();
 
 // Get all tasks (with role-based filtering)
-router.get('/', authenticateAdmin, async (req, res) => {
+router.get('/', authenticateUser, requirePermission('tasks', ['view']), async (req, res) => {
   try {
     const userId = req.user.id;
-    const userRole = req.user.role || 'task_creator';
+    const userRole = req.user.role || 'task_creator'; // This line might be redundant if req.user.role is always populated by authenticateUser
     
     let query = `
       SELECT 
@@ -31,17 +31,32 @@ router.get('/', authenticateAdmin, async (req, res) => {
     const conditions = [];
     const params = [];
     
-    // Role-based filtering
-    if (userRole === 'task_creator') {
-      // Task creators can only see tasks they created or are assigned to
-      query += ` WHERE (t.created_by = ? OR EXISTS (
-        SELECT 1 FROM task_assignments ta2 WHERE ta2.task_id = t.id AND ta2.user_id = ?
-      ))`;
-      params.push(userId, userId);
+    // Role-based filtering - now also consider granular permissions
+    if (userRole === 'task_creator' && !req.user.permissions.tasks.includes('view')) {
+        // If they are a task_creator and don't have explicit view permission, limit to their own/assigned tasks
+        query += ` WHERE (t.created_by = ? OR EXISTS (
+          SELECT 1 FROM task_assignments ta2 WHERE ta2.task_id = t.id AND ta2.user_id = ?
+        ))`;
+        params.push(userId, userId);
+    } else if (userRole === 'task_creator' && req.user.permissions.tasks.includes('view')) {
+        // Task creators with view permission can see all tasks. The permission system takes precedence.
+        query += ` WHERE 1=1`;
     } else {
-      // Admin and task_manager can see all tasks
-      query += ` WHERE 1=1`;
+        // Admins and Task Managers (legacy roles) can see all tasks, or users with 'view' permission
+        query += ` WHERE 1=1`;
     }
+
+    // Existing role-based filtering logic (can be simplified now with granular permissions)
+    // if (userRole === 'task_creator') {
+    //   // Task creators can only see tasks they created or are assigned to
+    //   query += ` WHERE (t.created_by = ? OR EXISTS (
+    //     SELECT 1 FROM task_assignments ta2 WHERE ta2.task_id = t.id AND ta2.user_id = ?
+    //   ))`;
+    //   params.push(userId, userId);
+    // } else {
+    //   // Admin and task_manager can see all tasks
+    //   query += ` WHERE 1=1`;
+    // }
     
     query += ` GROUP BY t.id ORDER BY t.order_index ASC, t.created_at DESC`;
     
@@ -73,7 +88,7 @@ router.get('/', authenticateAdmin, async (req, res) => {
 });
 
 // Get single task
-router.get('/:id', authenticateAdmin, async (req, res) => {
+router.get('/:id', authenticateUser, requirePermission('tasks', ['view']), async (req, res) => {
   try {
     const taskId = req.params.id;
     const userId = req.user.id;
@@ -99,8 +114,8 @@ router.get('/:id', authenticateAdmin, async (req, res) => {
     
     const task = tasks[0];
     
-    // Check permissions
-    if (userRole === 'task_creator' && task.created_by_id !== userId) {
+    // Check permissions (retained for task_creator specific logic if granular permission not present)
+    if (userRole === 'task_creator' && !req.user.permissions.tasks.includes('view') && task.created_by_id !== userId) {
       // Check if user is assigned to this task
       const [assignments] = await pool.execute(
         'SELECT * FROM task_assignments WHERE task_id = ? AND user_id = ?',
@@ -145,11 +160,9 @@ router.get('/:id', authenticateAdmin, async (req, res) => {
 });
 
 // Create task
-router.post('/', authenticateAdmin, async (req, res) => {
+router.post('/', authenticateUser, requirePermission('tasks', ['create']), async (req, res) => {
   try {
-    if (!canCreateTasks(req.user)) {
-      return res.status(403).json({ error: 'Insufficient permissions to create tasks' });
-    }
+    // The check `!canCreateTasks(req.user)` is now handled by `requirePermission('tasks', ['create'])`
     
     const { title, description, status, priority, project_id, due_date, assigned_user_ids } = req.body;
     const userId = req.user.id;
@@ -239,7 +252,7 @@ router.post('/', authenticateAdmin, async (req, res) => {
 });
 
 // Update task
-router.put('/:id', authenticateAdmin, async (req, res) => {
+router.put('/:id', authenticateUser, requirePermission('tasks', ['edit']), async (req, res) => {
   try {
     const taskId = req.params.id;
     const userId = req.user.id;
@@ -257,8 +270,8 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
     
     const task = tasks[0];
     
-    // Check permissions
-    if (userRole === 'task_creator') {
+    // Check permissions (retained for task_creator specific logic if granular permission not present)
+    if (userRole === 'task_creator' && !req.user.permissions.tasks.includes('edit')) {
       // Task creators can only update their own tasks or tasks they're assigned to
       if (task.created_by !== userId) {
         const [assignments] = await pool.execute(
@@ -272,9 +285,7 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
       }
     }
     
-    if (!canUpdateOwnTasks(req.user)) {
-      return res.status(403).json({ error: 'Insufficient permissions to update tasks' });
-    }
+    // The check `!canUpdateOwnTasks(req.user)` is now handled by `requirePermission('tasks', ['edit'])`
     
     const { title, description, status, priority, project_id, due_date, assigned_user_ids, order_index } = req.body;
     
@@ -391,7 +402,7 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
 });
 
 // Delete task
-router.delete('/:id', authenticateAdmin, async (req, res) => {
+router.delete('/:id', authenticateUser, requirePermission('tasks', ['delete']), async (req, res) => {
   try {
     const taskId = req.params.id;
     const userId = req.user.id;
@@ -410,13 +421,11 @@ router.delete('/:id', authenticateAdmin, async (req, res) => {
     const task = tasks[0];
     
     // Only admin and task_manager can delete tasks, or task creators can delete their own
-    if (userRole === 'task_creator' && task.created_by !== userId) {
+    if (userRole === 'task_creator' && !req.user.permissions.tasks.includes('delete') && task.created_by !== userId) {
       return res.status(403).json({ error: 'You can only delete your own tasks' });
     }
     
-    if (!canManageAllTasks(req.user) && task.created_by !== userId) {
-      return res.status(403).json({ error: 'Insufficient permissions to delete this task' });
-    }
+    // The check `!canManageAllTasks(req.user)` is now handled by `requirePermission('tasks', ['delete'])`
     
     await pool.execute('DELETE FROM tasks WHERE id = ?', [taskId]);
     
@@ -428,7 +437,7 @@ router.delete('/:id', authenticateAdmin, async (req, res) => {
 });
 
 // Get all users for assignment dropdown
-router.get('/users/list', authenticateAdmin, async (req, res) => {
+router.get('/users/list', authenticateUser, requirePermission('tasks', ['create', 'edit']), async (req, res) => {
   try {
     // Check if role column exists, if not select without it
     let users;

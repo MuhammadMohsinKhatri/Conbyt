@@ -1,11 +1,11 @@
 import express from 'express';
 import pool from '../../config/database.js';
-import { authenticateAdmin, requireRole } from '../../middleware/auth.js';
+import { authenticateUser, requirePermission } from '../../middleware/auth.js';
 
 const router = express.Router();
 
 // Get all users with permissions (admin only)
-router.get('/', authenticateAdmin, requireRole('admin'), async (req, res) => {
+router.get('/', authenticateUser, requirePermission('users', ['view']), async (req, res) => {
   try {
     const [users] = await pool.execute(
       'SELECT id, username, email, role, created_at FROM admin_users ORDER BY username ASC'
@@ -51,7 +51,7 @@ router.get('/', authenticateAdmin, requireRole('admin'), async (req, res) => {
 });
 
 // Update user role (admin only)
-router.put('/:id/role', authenticateAdmin, requireRole('admin'), async (req, res) => {
+router.put('/:id/role', authenticateUser, requirePermission('users', ['edit']), async (req, res) => {
   try {
     const userId = req.params.id;
     const { role } = req.body;
@@ -93,7 +93,7 @@ router.put('/:id/role', authenticateAdmin, requireRole('admin'), async (req, res
 });
 
 // Get single user with permissions
-router.get('/:id', authenticateAdmin, requireRole('admin'), async (req, res) => {
+router.get('/:id', authenticateUser, requirePermission('users', ['view']), async (req, res) => {
   try {
     const userId = req.params.id;
     const [users] = await pool.execute(
@@ -136,7 +136,7 @@ router.get('/:id', authenticateAdmin, requireRole('admin'), async (req, res) => 
 });
 
 // Update user permissions (admin only)
-router.put('/:id/permissions', authenticateAdmin, requireRole('admin'), async (req, res) => {
+router.put('/:id/permissions', authenticateUser, requirePermission('users', ['edit']), async (req, res) => {
   try {
     const userId = req.params.id;
     const { permissions } = req.body;
@@ -198,7 +198,7 @@ router.put('/:id/permissions', authenticateAdmin, requireRole('admin'), async (r
 });
 
 // Delete user permissions for a section
-router.delete('/:id/permissions/:section', authenticateAdmin, requireRole('admin'), async (req, res) => {
+router.delete('/:id/permissions/:section', authenticateUser, requirePermission('users', ['delete']), async (req, res) => {
   try {
     const userId = req.params.id;
     const section = req.params.section;

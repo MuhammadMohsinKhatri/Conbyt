@@ -1,14 +1,14 @@
 import express from 'express';
 import pool from '../../config/database.js';
-import { authenticateAdmin } from '../../middleware/auth.js';
+import { authenticateUser, requirePermission } from '../../middleware/auth.js';
 
 const router = express.Router();
 
-// All routes require authentication
-router.use(authenticateAdmin);
+// All routes require authentication (now handled per-route with granular permissions)
+// router.use(authenticateAdmin); // Removed as it's replaced by authenticateUser on each route
 
 // Get all clients
-router.get('/', async (req, res) => {
+router.get('/', authenticateUser, requirePermission('clients', ['view']), async (req, res) => {
   try {
     const [rows] = await pool.execute(
       'SELECT * FROM clients ORDER BY created_at DESC'
@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get single client by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticateUser, requirePermission('clients', ['view']), async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await pool.execute(
@@ -41,7 +41,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new client
-router.post('/', async (req, res) => {
+router.post('/', authenticateUser, requirePermission('clients', ['create']), async (req, res) => {
   try {
     const {
       name,
@@ -83,7 +83,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update client
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticateUser, requirePermission('clients', ['edit']), async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -125,7 +125,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete client
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateUser, requirePermission('clients', ['delete']), async (req, res) => {
   try {
     const { id } = req.params;
     await pool.execute('DELETE FROM clients WHERE id = ?', [id]);

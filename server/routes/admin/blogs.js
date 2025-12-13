@@ -1,14 +1,14 @@
 import express from 'express';
 import pool from '../../config/database.js';
-import { authenticateAdmin } from '../../middleware/auth.js';
+import { authenticateUser, requirePermission } from '../../middleware/auth.js';
 
 const router = express.Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticateUser);
 
 // Get all blog posts (admin view)
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('blogs', ['view']), async (req, res) => {
   try {
     const [rows] = await pool.execute(
       'SELECT * FROM blog_posts ORDER BY created_at DESC'
@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get single blog post by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requirePermission('blogs', ['view']), async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await pool.execute(
@@ -41,7 +41,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new blog post
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('blogs', ['create']), async (req, res) => {
   try {
     const {
       title,
@@ -100,7 +100,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update blog post
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePermission('blogs', ['edit']), async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -157,7 +157,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete blog post
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('blogs', ['delete']), async (req, res) => {
   try {
     const { id } = req.params;
     await pool.execute('DELETE FROM blog_posts WHERE id = ?', [id]);

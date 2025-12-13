@@ -1,14 +1,14 @@
 import express from 'express';
 import pool from '../../config/database.js';
-import { authenticateAdmin } from '../../middleware/auth.js';
+import { authenticateUser, requirePermission } from '../../middleware/auth.js';
 
 const router = express.Router();
 
-// All routes require authentication
-router.use(authenticateAdmin);
+// All routes require authentication (now handled per-route with granular permissions)
+// router.use(authenticateAdmin); // Removed as it's replaced by authenticateUser on each route
 
 // Get all contact submissions
-router.get('/', async (req, res) => {
+router.get('/', authenticateUser, requirePermission('contact', ['view']), async (req, res) => {
   try {
     const [rows] = await pool.execute(
       'SELECT * FROM contact_submissions ORDER BY created_at DESC'
@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get single contact submission by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticateUser, requirePermission('contact', ['view']), async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await pool.execute(
@@ -41,7 +41,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Delete contact submission
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateUser, requirePermission('contact', ['delete']), async (req, res) => {
   try {
     const { id } = req.params;
     await pool.execute('DELETE FROM contact_submissions WHERE id = ?', [id]);
@@ -53,7 +53,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Mark as read/unread
-router.patch('/:id/read', async (req, res) => {
+router.patch('/:id/read', authenticateUser, requirePermission('contact', ['edit']), async (req, res) => {
   try {
     const { id } = req.params;
     const { read } = req.body;
