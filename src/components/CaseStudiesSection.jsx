@@ -127,10 +127,36 @@ const CaseStudiesSection = () => {
         >
           {caseStudies.slice(0, 4).map((cs, i) => {
             const imageUrl = cs.image_url || cs.image || portfolio1;
-            const techArray = Array.isArray(cs.tech) ? cs.tech 
-                             : cs.technologies ? cs.technologies.split(',').map(t => t.trim())
-                             : cs.tech_stack ? cs.tech_stack.split(',').map(t => t.trim())
-                             : ['AI', 'ML'];
+            
+            // Handle tech stack which can be an array, a JSON string, or a comma-separated string
+            let techArray = [];
+            if (Array.isArray(cs.tech_stack)) {
+              techArray = cs.tech_stack;
+            } else if (typeof cs.tech_stack === 'string') {
+              try {
+                const parsed = JSON.parse(cs.tech_stack);
+                if (Array.isArray(parsed)) techArray = parsed;
+                else techArray = cs.tech_stack.split(',').map(t => t.trim());
+              } catch (e) {
+                techArray = cs.tech_stack.split(',').map(t => t.trim());
+              }
+            } else if (Array.isArray(cs.tech)) {
+              techArray = cs.tech;
+            } else {
+              techArray = ['AI', 'ML'];
+            }
+
+            // Clean up description
+            const stripHtml = (html) => {
+               if (!html) return '';
+               const tmp = document.createElement("DIV");
+               tmp.innerHTML = html;
+               return tmp.textContent || tmp.innerText || "";
+            };
+            
+            const description = cs.description ? (cs.description.includes('<') ? stripHtml(cs.description) : cs.description) : (cs.excerpt || "No description available.");
+            const truncatedDesc = description.length > 100 ? description.substring(0, 100) + '...' : description;
+
             return (
             <div
               key={cs.id || i}
@@ -152,7 +178,7 @@ const CaseStudiesSection = () => {
                 />
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 <Link
-                  to={cs.link || `/case-study/${cs.slug || cs.id}`}
+                  to={`/portfolio/${cs.slug || cs.id}`}
                   className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/image:opacity-100 transition-opacity duration-300"
                   tabIndex={-1}
                 >
@@ -177,7 +203,7 @@ const CaseStudiesSection = () => {
                    <div className="w-2 h-2 bg-accent rounded-full ml-2"></div>
                  </div>
                  <p className="text-xs sm:text-sm text-white/70 font-normal mb-2 text-left">
-                   {cs.description || cs.short_description || cs.excerpt}
+                   {truncatedDesc}
                  </p>
                 <div className="flex gap-2 flex-wrap">
                   {techArray.map((t, idx) => (

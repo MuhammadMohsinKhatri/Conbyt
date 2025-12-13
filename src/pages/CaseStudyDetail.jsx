@@ -14,7 +14,7 @@ const CaseStudyDetail = () => {
       try {
         setLoading(true);
         setError(null);
-        const studyData = await fetchCaseStudyBySlug(slug); // Assuming this fetches from CMS
+        const studyData = await fetchCaseStudyBySlug(slug); // Fetches from CMS portfolios
         setCaseStudy(studyData);
       } catch (err) {
         console.error('Error loading case study:', err);
@@ -40,6 +40,21 @@ const CaseStudyDetail = () => {
     return imagePath.startsWith('/') ? imagePath : `/uploads/${imagePath}`;
   };
 
+  // Helper to parse tech stack
+  const getTechStack = (stack) => {
+    if (!stack) return [];
+    if (Array.isArray(stack)) return stack;
+    if (typeof stack === 'string') {
+      try {
+        const parsed = JSON.parse(stack);
+        return Array.isArray(parsed) ? parsed : stack.split(',').map(t => t.trim());
+      } catch (e) {
+        return stack.split(',').map(t => t.trim());
+      }
+    }
+    return [];
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-primary text-white flex items-center justify-center">
@@ -59,26 +74,37 @@ const CaseStudyDetail = () => {
     );
   }
 
+  // Clean description for SEO description
+  const stripHtml = (html) => {
+     if (!html) return '';
+     const tmp = document.createElement("DIV");
+     tmp.innerHTML = html;
+     return tmp.textContent || tmp.innerText || "";
+  };
+  
+  const seoDescription = caseStudy.seoDescription || (caseStudy.description ? stripHtml(caseStudy.description).substring(0, 160) : 'Case Study Detail');
+  const techStack = getTechStack(caseStudy.tech_stack);
+
   // Structured data for SEO
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Article",
     "headline": caseStudy.title,
-    "description": caseStudy.excerpt,
-    "image": getImageUrl(caseStudy.image),
+    "description": seoDescription,
+    "image": getImageUrl(caseStudy.image_url),
     "author": {
       "@type": "Person",
-      "name": caseStudy.author || "Conbyt Team"
+      "name": "Conbyt Team"
     },
     "publisher": {
       "@type": "Organization",
       "name": "Conbyt",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://conbyt.com/logo.png"
+        "url": "https://conbyt.com/assets/newlogo14.png"
       }
     },
-    "datePublished": caseStudy.datePublished || new Date().toISOString(),
+    "datePublished": caseStudy.created_at || new Date().toISOString(),
     "mainEntityOfPage": {
       "@type": "WebPage",
       "@id": `https://conbyt.com/portfolio/${caseStudy.slug}`
@@ -86,37 +112,62 @@ const CaseStudyDetail = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 text-white">
+    <div className="container mx-auto p-4 text-white pt-24 sm:pt-28 md:pt-32">
       <SEOHead 
-        title={caseStudy.seoTitle || caseStudy.title}
-        description={caseStudy.seoDescription || caseStudy.excerpt}
-        keywords={caseStudy.seoKeywords || caseStudy.tags?.join(', ') || 'case study, AI, Machine Learning'}
+        title={`${caseStudy.title} | Conbyt Case Studies`}
+        description={seoDescription}
+        keywords={techStack.join(', ') || 'case study, AI, Machine Learning, portfolio'}
         structuredData={structuredData}
       />
       
-      <h1 className="text-4xl font-bold mb-6">{caseStudy.title}</h1>
-      <img src={getImageUrl(caseStudy.image)} alt={caseStudy.title} className="w-full h-96 object-cover rounded-lg mb-8" />
-      <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: caseStudy.body }} />
-
-      {caseStudy.relatedPosts && caseStudy.relatedPosts.length > 0 && (
-        <div className="mt-12">
-          <h2 className="text-3xl font-bold mb-6">Related Case Studies</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {caseStudy.relatedPosts.map((post) => (
-              <Link to={`/portfolio/${post.slug}`} key={post.slug} className="block bg-secondary rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                <img src={getImageUrl(post.image)} alt={post.title} className="w-full h-48 object-cover" />
-                <div className="p-6">
-                  <h3 className="text-2xl font-bold mb-2">{post.title}</h3>
-                  <p className="text-white/70 text-sm mb-4">{post.excerpt}</p>
-                  <span className="text-accent hover:underline">Read More</span>
-                </div>
-              </Link>
-            ))}
-          </div>
+      <div className="max-w-4xl mx-auto">
+        <Link to="/case-studies" className="inline-block mb-6 text-accent hover:underline">
+          &larr; Back to Case Studies
+        </Link>
+        
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-white">{caseStudy.title}</h1>
+        
+        <div className="flex flex-wrap gap-2 mb-6">
+          {techStack.map((tech, idx) => (
+            <span key={idx} className="px-3 py-1 bg-accent/10 border border-accent/20 rounded-full text-accent text-sm">
+              {tech}
+            </span>
+          ))}
         </div>
-      )}
+
+        <img 
+          src={getImageUrl(caseStudy.image_url || caseStudy.image)} 
+          alt={caseStudy.title} 
+          className="w-full h-auto max-h-[600px] object-cover rounded-xl shadow-2xl mb-8 border border-white/10" 
+        />
+        
+        <div className="flex gap-4 mb-8">
+          {caseStudy.live_url && (
+            <a 
+              href={caseStudy.live_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="px-6 py-2 bg-accent text-primary font-bold rounded-full hover:bg-accent2 transition"
+            >
+              Live Demo
+            </a>
+          )}
+          {caseStudy.github_url && (
+            <a 
+              href={caseStudy.github_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="px-6 py-2 bg-secondary border border-white/20 text-white font-bold rounded-full hover:bg-white/10 transition"
+            >
+              GitHub Repo
+            </a>
+          )}
+        </div>
+
+        <div className="prose prose-invert prose-lg max-w-none bg-surface p-6 sm:p-8 rounded-xl border border-white/5 shadow-xl" dangerouslySetInnerHTML={{ __html: caseStudy.description }} />
+      </div>
     </div>
   );
 };
 
-export default CaseStudyDetail; 
+export default CaseStudyDetail;
