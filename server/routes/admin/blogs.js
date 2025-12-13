@@ -1,6 +1,7 @@
 import express from 'express';
 import pool from '../../config/database.js';
 import { authenticateUser, requirePermission } from '../../middleware/auth.js';
+import { notifySearchEngines } from '../../utils/seoUtils.js';
 
 const router = express.Router();
 
@@ -85,6 +86,13 @@ router.post('/', requirePermission('blogs', ['create']), async (req, res) => {
       ]
     );
 
+    // If published, notify search engines
+    if (published) {
+      notifySearchEngines().catch(err => 
+        console.log('⚠️ Failed to notify search engines:', err.message)
+      );
+    }
+
     res.status(201).json({ 
       success: true, 
       id: result.insertId,
@@ -145,6 +153,13 @@ router.put('/:id', requirePermission('blogs', ['edit']), async (req, res) => {
         published || false, featured || false, id
       ]
     );
+
+    // If published, notify search engines
+    if (published) {
+      notifySearchEngines().catch(err => 
+        console.log('⚠️ Failed to notify search engines:', err.message)
+      );
+    }
 
     res.json({ success: true, message: 'Blog post updated successfully' });
   } catch (error) {

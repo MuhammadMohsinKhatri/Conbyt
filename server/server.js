@@ -173,10 +173,71 @@ if (process.env.NODE_ENV === 'production') {
     }
   });
   
+  // Dynamic sitemap generation
+  app.get('/sitemap.xml', async (req, res) => {
+    try {
+      const baseUrl = 'https://conbyt.com';
+      const currentDate = new Date().toISOString().split('T')[0];
+      
+      let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
+
+      // Static pages
+      const staticPages = [
+        { url: '', priority: '1.0', changefreq: 'weekly' },
+        { url: '/case-studies', priority: '0.9', changefreq: 'weekly' },
+        { url: '/blog', priority: '0.9', changefreq: 'daily' },
+        { url: '/services', priority: '0.8', changefreq: 'monthly' },
+        { url: '/about', priority: '0.7', changefreq: 'monthly' },
+        { url: '/contact', priority: '0.6', changefreq: 'monthly' },
+        { url: '/privacy-policy', priority: '0.3', changefreq: 'monthly' },
+        { url: '/terms-of-service', priority: '0.3', changefreq: 'monthly' }
+      ];
+
+      // Add static pages
+      staticPages.forEach(page => {
+        sitemap += `
+  <url>
+    <loc>${baseUrl}${page.url}</loc>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`;
+      });
+
+      // Add dynamic blog posts
+      try {
+        const [blogRows] = await pool.execute('SELECT slug, updated_at, created_at FROM blog_posts WHERE published = true');
+        blogRows.forEach(blog => {
+          const blogDate = blog.updated_at ? new Date(blog.updated_at).toISOString().split('T')[0] : 
+                          blog.created_at ? new Date(blog.created_at).toISOString().split('T')[0] : currentDate;
+          sitemap += `
+  <url>
+    <loc>${baseUrl}/blog/${blog.slug}</loc>
+    <lastmod>${blogDate}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+        });
+      } catch (error) {
+        console.log('Could not fetch blogs for sitemap:', error.message);
+      }
+
+      sitemap += `
+</urlset>`;
+
+      res.setHeader('Content-Type', 'application/xml');
+      res.send(sitemap);
+    } catch (error) {
+      console.error('Error generating sitemap:', error);
+      res.status(500).send('Error generating sitemap');
+    }
+  });
+
   // Handle React routing - return all non-API requests to React app
   app.get('*', (req, res) => {
-    // Don't serve index.html for API routes
-    if (req.path.startsWith('/api')) {
+    // Don't serve index.html for API routes or sitemap
+    if (req.path.startsWith('/api') || req.path === '/sitemap.xml') {
       return res.status(404).json({ error: 'API endpoint not found' });
     }
     
