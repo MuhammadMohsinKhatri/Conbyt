@@ -252,6 +252,7 @@ const CaseStudies = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 
