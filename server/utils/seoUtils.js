@@ -1,4 +1,4 @@
-const https = require('https');
+import https from 'https';
 
 /**
  * Ping Google to notify about sitemap updates
@@ -61,7 +61,7 @@ const notifySearchEngines = async () => {
   }
 };
 
-module.exports = {
+export {
   pingGoogleSitemap,
   pingBingSitemap,
   notifySearchEngines
