@@ -43,7 +43,19 @@ For faster indexing:
 3. Request indexing for:
    - Homepage: `https://conbyt.com`
    - Blog: `https://conbyt.com/blog`
-   - Case Studies: `https://conbyt.com/case-studies`
+   - Services: `https://conbyt.com/services`
+   - About Us: `https://conbyt.com/about`
+   - Contact Us: `https://conbyt.com/contact`
+   - Pricing: `https://conbyt.com/pricing`
+   - FAQ: `https://conbyt.com/faq`
+   - Privacy Policy: `https://conbyt.com/privacy-policy`
+   - Terms of Service: `https://conbyt.com/terms-of-service`
+   - AI Solutions: `https://conbyt.com/ai-solutions`
+   - Machine Learning: `https://conbyt.com/machine-learning`
+   - Data Analytics: `https://conbyt.com/data-analytics`
+   - Web Development: `https://conbyt.com/web-development`
+   - Portfolio (Dynamic): `https://conbyt.com/portfolio/<PROJECT_SLUG>`
+   - Careers: `https://conbyt.com/careers`
 
 ## 🔧 HTML Meta Tag for Verification
 

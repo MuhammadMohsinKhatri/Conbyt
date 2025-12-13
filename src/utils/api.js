@@ -35,9 +35,21 @@ export const fetchBlogBySlug = async (slug) => {
   return response.json();
 };
 
+export const fetchPageContent = async (slug) => {
+  const response = await fetch(`${API_BASE_URL}/pages/${slug}`);
+  if (!response.ok) throw new Error(`Failed to fetch ${slug} page content`);
+  return response.json();
+};
+
 export const fetchCaseStudies = async () => {
-  const response = await fetch(`${API_BASE_URL}/case-studies`);
-  if (!response.ok) throw new Error('Failed to fetch case studies');
+  const response = await fetch(`${API_BASE_URL}/portfolios`);
+  if (!response.ok) throw new Error('Failed to fetch portfolios');
+  return response.json();
+};
+
+export const fetchCaseStudyBySlug = async (slug) => {
+  const response = await fetch(`${API_BASE_URL}/portfolios/${slug}`);
+  if (!response.ok) throw new Error('Failed to fetch portfolio');
   return response.json();
 };
 
