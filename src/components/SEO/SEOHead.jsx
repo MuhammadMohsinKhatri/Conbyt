@@ -1,6 +1,6 @@
 import React from 'react';
-import { Helmet } from 'react-helmet-async';
 
+// Temporary fallback component if react-helmet-async isn't available
 const SEOHead = ({
   title = "Conbyt - AI & Machine Learning Solutions",
   description = "Transform your business with cutting-edge AI and machine learning solutions. Custom AI development, data analytics, and automation services.",
@@ -14,47 +14,42 @@ const SEOHead = ({
   structuredData = null,
   noIndex = false
 }) => {
-  const fullTitle = title.includes('Conbyt') ? title : `${title} | Conbyt`;
-  const finalOgTitle = ogTitle || fullTitle;
-  const finalOgDescription = ogDescription || description;
+  // Use useEffect to set document title and meta tags manually
+  React.useEffect(() => {
+    const fullTitle = title.includes('Conbyt') ? title : `${title} | Conbyt`;
+    document.title = fullTitle;
+    
+    // Set meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.name = 'description';
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.content = description;
+    
+    // Set canonical URL
+    let canonical_link = document.querySelector('link[rel="canonical"]');
+    if (!canonical_link) {
+      canonical_link = document.createElement('link');
+      canonical_link.rel = 'canonical';
+      document.head.appendChild(canonical_link);
+    }
+    canonical_link.href = canonical;
+    
+    // Add structured data if provided
+    if (structuredData) {
+      let scriptTag = document.querySelector('script[type="application/ld+json"]');
+      if (!scriptTag) {
+        scriptTag = document.createElement('script');
+        scriptTag.type = 'application/ld+json';
+        document.head.appendChild(scriptTag);
+      }
+      scriptTag.textContent = JSON.stringify(structuredData);
+    }
+  }, [title, description, canonical, structuredData]);
 
-  return (
-    <Helmet>
-      <title>{fullTitle}</title>
-      <meta name="description" content={description} />
-      <meta name="keywords" content={keywords} />
-      <link rel="canonical" href={canonical} />
-      
-      {noIndex && <meta name="robots" content="noindex, nofollow" />}
-      
-      {/* Open Graph Meta Tags */}
-      <meta property="og:title" content={finalOgTitle} />
-      <meta property="og:description" content={finalOgDescription} />
-      <meta property="og:type" content={ogType} />
-      <meta property="og:url" content={canonical} />
-      <meta property="og:image" content={ogImage} />
-      <meta property="og:site_name" content="Conbyt" />
-      
-      {/* Twitter Card Meta Tags */}
-      <meta name="twitter:card" content={twitterCard} />
-      <meta name="twitter:title" content={finalOgTitle} />
-      <meta name="twitter:description" content={finalOgDescription} />
-      <meta name="twitter:image" content={ogImage} />
-      <meta name="twitter:site" content="@conbyt" />
-      
-      {/* Additional Meta Tags */}
-      <meta name="author" content="Conbyt" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta httpEquiv="Content-Language" content="en" />
-      
-      {/* Structured Data */}
-      {structuredData && (
-        <script type="application/ld+json">
-          {JSON.stringify(structuredData)}
-        </script>
-      )}
-    </Helmet>
-  );
+  return null; // This component doesn't render anything
 };
 
 export default SEOHead;
