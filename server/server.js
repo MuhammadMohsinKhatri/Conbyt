@@ -20,6 +20,7 @@ import adminPaymentsRoutes from './routes/admin/payments.js';
 import adminPortfoliosRoutes from './routes/admin/portfolios.js';
 import adminTasksRoutes from './routes/admin/tasks.js';
 import adminUsersRoutes from './routes/admin/users.js';
+import portfoliosRoutes from './routes/portfolios.js';
 import uploadRoutes from './routes/upload.js';
 import { ensureBlogPostsColumns } from './utils/migrateColumns.js';
 
@@ -75,6 +76,7 @@ app.use('/api/testimonials', testimonialsRoutes);
 app.use('/api/services', servicesRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/portfolios', portfoliosRoutes);
 
 // Admin Routes
 app.use('/api/admin/auth', adminAuthRoutes);
