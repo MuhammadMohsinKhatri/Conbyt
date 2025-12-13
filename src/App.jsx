@@ -25,6 +25,7 @@ const Payments = lazy(() => import("./pages/CMS/Payments"));
 const Portfolios = lazy(() => import("./pages/CMS/Portfolios"));
 const Tasks = lazy(() => import("./pages/CMS/Tasks"));
 const Users = lazy(() => import("./pages/CMS/Users"));
+const Sitemap = lazy(() => import("./pages/Sitemap"));
 
 
 function AppContent() {
@@ -44,6 +45,7 @@ function AppContent() {
           <Route path="/blog/:slug" element={<BlogDetail />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/sitemap.xml" element={<Sitemap />} />
           {/* CMS Routes */}
           <Route path="/cms/login" element={<CMSLogin />} />
           <Route path="/cms/register" element={<CMSRegister />} />

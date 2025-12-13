@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Disallow CMS/admin pages
+Disallow: /cms/
+
+# Sitemap
+Sitemap: https://conbyt.com/sitemap.xml
+
+# Crawl delay (recommended for good crawling behavior)
+Crawl-delay: 1

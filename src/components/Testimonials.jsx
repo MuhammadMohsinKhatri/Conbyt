@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FaCircle, FaUser } from "react-icons/fa";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, A11y } from "swiper/modules";
@@ -6,8 +6,10 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import SwiperCore from "swiper";
+import { fetchTestimonials } from "../utils/api";
 
-const testimonials = [
+// Fallback testimonials in case API fails
+const fallbackTestimonials = [
   {
     name: "Peter Devaney",
     company: "Proclaim Inc",
@@ -31,11 +33,34 @@ const testimonials = [
 ];
 
 const Testimonials = () => {
+  const [testimonials, setTestimonials] = useState(fallbackTestimonials);
+  const [loading, setLoading] = useState(true);
+  
   // Refs for elements that need entrance animations
   const titleRef = useRef(null);
   const swiperContainerRef = useRef(null);
   const prevButtonRef = useRef(null);
   const nextButtonRef = useRef(null);
+
+  // Load dynamic testimonials
+  useEffect(() => {
+    const loadTestimonials = async () => {
+      try {
+        setLoading(true);
+        const dynamicTestimonials = await fetchTestimonials();
+        if (dynamicTestimonials && dynamicTestimonials.length > 0) {
+          setTestimonials(dynamicTestimonials);
+        }
+      } catch (error) {
+        console.error('Error loading testimonials:', error);
+        // Keep fallback testimonials
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTestimonials();
+  }, []);
 
   // Intersection Observer for scroll-triggered animations
   useEffect(() => {
@@ -138,14 +163,20 @@ const Testimonials = () => {
             className="testimonial-swiper"
           >
             {testimonials.map((t, i) => (
-              <SwiperSlide key={i}>
+              <SwiperSlide key={t.id || i}>
                 <div className="bg-surface rounded-2xl shadow-xl p-10 flex flex-col items-center text-center h-full">
                   <div className="w-24 h-24 rounded-full mb-6 shadow-lg bg-gray-300 flex items-center justify-center">
                     <FaUser className="w-12 h-12 text-gray-600" />
                   </div>
-                  <p className="text-lg md:text-xl text-text italic mb-6">"{t.text}"</p>
-                  <div className="font-bold text-accent text-lg md:text-xl mb-1">{t.name}</div>
-                  <div className="text-text text-base md:text-lg font-medium">{t.company}</div>
+                  <p className="text-lg md:text-xl text-text italic mb-6">
+                    "{t.text || t.testimonial || t.content}"
+                  </p>
+                  <div className="font-bold text-accent text-lg md:text-xl mb-1">
+                    {t.name || t.client_name}
+                  </div>
+                  <div className="text-text text-base md:text-lg font-medium">
+                    {t.company || t.company_name || t.position}
+                  </div>
                 </div>
               </SwiperSlide>
             ))}

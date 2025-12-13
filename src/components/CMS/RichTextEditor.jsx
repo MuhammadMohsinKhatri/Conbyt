@@ -35,7 +35,10 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
     toolbar: {
       container: [
         [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-        [{ 'size': ['small', false, 'large', 'huge'] }],
+        // Enhanced size selector
+        [{ 'size': [
+          'small', false, 'large', 'huge', 
+          '12px','14px','16px','18px','20px','24px','28px','32px','40px'] }],
         ['bold', 'italic', 'underline', 'strike'],
         [{ 'color': [] }, { 'background': [] }],
         [{ 'list': 'ordered'}, { 'list': 'bullet' }],
@@ -266,6 +269,15 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
       .ql-size-small { font-size: 0.75em; }
       .ql-size-large { font-size: 1.5em; }
       .ql-size-huge { font-size: 2.5em; }
+      .ql-size-12px { font-size: 12px !important; }
+      .ql-size-14px { font-size: 14px !important; }
+      .ql-size-16px { font-size: 16px !important; }
+      .ql-size-18px { font-size: 18px !important; }
+      .ql-size-20px { font-size: 20px !important; }
+      .ql-size-24px { font-size: 24px !important; }
+      .ql-size-28px { font-size: 28px !important; }
+      .ql-size-32px { font-size: 32px !important; }
+      .ql-size-40px { font-size: 40px !important; }
       .ql-snow .ql-tooltip {
         background: rgba(35, 35, 43, 0.95);
         border: 1px solid rgba(255, 255, 255, 0.2);
@@ -355,7 +367,10 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
   }, [value]);
 
   return (
-    <div className="rich-text-editor-wrapper">
+    <div className="rich-text-editor-wrapper space-y-2">
+      <div className="text-xs text-white/70 px-1 pb-1 select-none" title="You can change font size using the toolbar dropdown. Includes normal, large, huge, and px values.">
+        Tip: Use the second dropdown in the toolbar to change font size (named sizes or px values supported).
+      </div>
       {missingAltTextCount > 0 && (
         <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3 mb-3 flex items-start gap-2">
           <FaExclamationTriangle className="text-yellow-400 mt-0.5 flex-shrink-0" />

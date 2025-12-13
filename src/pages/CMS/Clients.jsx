@@ -170,8 +170,10 @@ const Clients = () => {
       
       if (editingClient && editingClient.id) {
         await updateAdminClient(editingClient.id, formData, token);
+        toast.success('Client updated successfully');
       } else {
         await createAdminClient(formData, token);
+        toast.success('Client created successfully');
       }
       
       setShowModal(false);
@@ -185,13 +187,12 @@ const Clients = () => {
         notes: '',
         status: 'active'
       });
-      toast.success(editingClient ? 'Client updated successfully' : 'Client created successfully');
       fetchClients();
     } catch (error) {
       console.error('Error saving client:', error);
       const errorMsg = error.message || 'Failed to save client. Please try again.';
       setError(errorMsg);
-      toast.error(errorMsg);
+      toast.error(errorMsg); // Ensure error toast appears BEFORE closing modal
     }
   };
 

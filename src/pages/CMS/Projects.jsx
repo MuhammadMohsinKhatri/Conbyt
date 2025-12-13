@@ -512,7 +512,7 @@ const Projects = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={e => { if(e.target === e.currentTarget) { setShowModal(false); setEditingProject(null); } }}>
           <div className="bg-surface rounded-xl border border-white/10 p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto relative">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-white">

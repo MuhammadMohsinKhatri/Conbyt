@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchBlogs } from "../utils/api";
+import SEOHead from "../components/SEO/SEOHead";
 
 const Blog = () => {
   const [blogPosts, setBlogPosts] = useState([]);
@@ -42,8 +43,54 @@ const Blog = () => {
     }
   };
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "name": "Conbyt AI Blog",
+    "description": "Latest insights, trends, and developments in artificial intelligence and machine learning",
+    "url": "https://conbyt.com/blog",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Conbyt",
+      "url": "https://conbyt.com",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://conbyt.com/assets/logo.png"
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "https://conbyt.com/blog"
+    },
+    "blogPost": blogPosts.map(post => ({
+      "@type": "BlogPosting",
+      "headline": post.title,
+      "description": post.excerpt,
+      "url": `https://conbyt.com/blog/${post.slug}`,
+      "datePublished": post.date,
+      "author": {
+        "@type": "Person",
+        "name": post.author_name || "Conbyt Team"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Conbyt"
+      },
+      "image": post.image_url ? (post.image_url.startsWith('http') ? post.image_url : `https://conbyt.com${post.image_url}`) : "https://conbyt.com/assets/blog-default.jpg"
+    }))
+  };
+
   return (
-    <div className="min-h-screen text-white">
+    <>
+      <SEOHead
+        title="AI Blog | Latest Insights & Trends in Machine Learning"
+        description="Stay updated with the latest developments in artificial intelligence, machine learning, and technology trends. Expert insights help you understand the future of AI and its impact on business."
+        keywords="AI blog, machine learning blog, artificial intelligence trends, AI insights, ML developments, tech blog, AI news"
+        canonical="https://conbyt.com/blog"
+        ogImage="https://conbyt.com/assets/og-blog.jpg"
+        structuredData={structuredData}
+      />
+      <div className="min-h-screen text-white">
       {/* Page Title Section */}
       <section className="w-full bg-secondary pt-24 pb-8">
         <div className="max-w-7xl mx-auto px-6">
@@ -167,6 +214,7 @@ const Blog = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 

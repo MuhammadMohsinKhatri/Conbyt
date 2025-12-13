@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaCircle } from "react-icons/fa";
+import { fetchCaseStudies } from "../utils/api";
 
 // Import portfolio images
 import portfolio1 from "../assets/portfolio/1.webp";
@@ -8,7 +9,8 @@ import portfolio2 from "../assets/portfolio/2.webp";
 import portfolio3 from "../assets/portfolio/3.webp";
 import portfolio4 from "../assets/portfolio/4.webp";
 
-const caseStudies = [
+// Fallback case studies
+const fallbackCaseStudies = [
   {
     title: "HireSense",
     description: "A platform that streamlines technical hiring with AI-powered interviews, automated evaluations, and insightful candidate analytics.",
@@ -40,9 +42,32 @@ const caseStudies = [
 ];
 
 const CaseStudiesSection = () => {
+  const [caseStudies, setCaseStudies] = useState(fallbackCaseStudies.slice(0, 4)); // Show only first 4 on homepage
+  const [loading, setLoading] = useState(true);
+  
   const titleRef = useRef(null);
   const caseStudiesGridRef = useRef(null);
   const ctaRef = useRef(null);
+
+  // Load dynamic case studies
+  useEffect(() => {
+    const loadCaseStudies = async () => {
+      try {
+        setLoading(true);
+        const dynamicCaseStudies = await fetchCaseStudies();
+        if (dynamicCaseStudies && dynamicCaseStudies.length > 0) {
+          setCaseStudies(dynamicCaseStudies.slice(0, 4)); // Show only first 4 on homepage
+        }
+      } catch (error) {
+        console.error('Error loading case studies:', error);
+        // Keep fallback case studies
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCaseStudies();
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -100,14 +125,20 @@ const CaseStudiesSection = () => {
           ref={caseStudiesGridRef}
           className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 px-2 sm:px-0 opacity-0 translate-y-8 transition-all duration-1000 ease-out delay-200"
         >
-          {caseStudies.slice(0, 4).map((cs, i) => (
+          {caseStudies.slice(0, 4).map((cs, i) => {
+            const imageUrl = cs.image_url || cs.image || portfolio1;
+            const techArray = Array.isArray(cs.tech) ? cs.tech 
+                             : cs.technologies ? cs.technologies.split(',').map(t => t.trim())
+                             : cs.tech_stack ? cs.tech_stack.split(',').map(t => t.trim())
+                             : ['AI', 'ML'];
+            return (
             <div
-              key={i}
+              key={cs.id || i}
               className="bg-surface max-w-sm mx-auto w-full rounded-2xl overflow-hidden flex flex-col items-center shadow-lg group"
             >
               <div className="relative w-full group/image">
                 <img
-                  src={cs.image}
+                  src={imageUrl}
                   alt={cs.title}
                   className="w-full h-52 sm:h-60 md:h-72 object-cover transition duration-300"
                   loading="lazy"
@@ -115,10 +146,13 @@ const CaseStudiesSection = () => {
                     borderBottomLeftRadius: 0,
                     borderBottomRightRadius: 0,
                   }}
+                  onError={(e) => {
+                    e.target.src = portfolio1; // Fallback image
+                  }}
                 />
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 <Link
-                  to={cs.link}
+                  to={cs.link || `/case-study/${cs.slug || cs.id}`}
                   className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/image:opacity-100 transition-opacity duration-300"
                   tabIndex={-1}
                 >
@@ -143,10 +177,10 @@ const CaseStudiesSection = () => {
                    <div className="w-2 h-2 bg-accent rounded-full ml-2"></div>
                  </div>
                  <p className="text-xs sm:text-sm text-white/70 font-normal mb-2 text-left">
-                   {cs.description}
+                   {cs.description || cs.short_description || cs.excerpt}
                  </p>
                 <div className="flex gap-2 flex-wrap">
-                  {cs.tech.map((t, idx) => (
+                  {techArray.map((t, idx) => (
                     <span
                       key={idx}
                       className="bg-white/10 text-white text-xs px-2 py-1 rounded-full border border-white/20"
@@ -157,7 +191,8 @@ const CaseStudiesSection = () => {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* CTA Button */}

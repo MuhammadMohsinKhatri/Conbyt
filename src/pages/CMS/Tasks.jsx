@@ -821,7 +821,8 @@ const TaskModal = ({ task, users, projects, onClose, onSave, user, canManageAll 
     priority: 'medium',
     project_id: '',
     due_date: '',
-    assigned_user_ids: []
+    assigned_user_ids: [],
+    color: '' // <-- new field for color
   });
 
   useEffect(() => {
@@ -833,7 +834,8 @@ const TaskModal = ({ task, users, projects, onClose, onSave, user, canManageAll 
         priority: task.priority || 'medium',
         project_id: task.project_id || '',
         due_date: task.due_date || '',
-        assigned_user_ids: (task.assigned_users || []).map(u => u.id)
+        assigned_user_ids: (task.assigned_users || []).map(u => u.id),
+        color: task.color || ''
       });
     }
   }, [task]);
@@ -844,7 +846,8 @@ const TaskModal = ({ task, users, projects, onClose, onSave, user, canManageAll 
       ...formData,
       project_id: formData.project_id || null,
       due_date: formData.due_date || null,
-      assigned_user_ids: formData.assigned_user_ids
+      assigned_user_ids: formData.assigned_user_ids,
+      color: formData.color // include color
     };
     onSave(submitData);
   };
@@ -852,7 +855,7 @@ const TaskModal = ({ task, users, projects, onClose, onSave, user, canManageAll 
   const canEdit = canManageAll || task?.created_by?.id === user?.id;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={e => { if(e.target === e.currentTarget) onClose(); }}>
       <div className="bg-surface rounded-lg border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-surface border-b border-white/10 p-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-white">
@@ -983,6 +986,32 @@ const TaskModal = ({ task, users, projects, onClose, onSave, user, canManageAll 
               </div>
             </div>
           )}
+          
+          <div>
+            <label className="block text-white/70 text-sm mb-2">Task Color</label>
+            <div className="flex gap-2 flex-wrap">
+              {['#7c3aed','#0891b2','#84cc16','#f59e42','#ff3647','#36eea2','#9c27b0','#475569','#f1c40f','#00bcd4'].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${formData.color===c ? 'border-white' : 'border-white/20'}`}
+                  style={{ background: c }}
+                  aria-label={`Pick color ${c}`}
+                  tabIndex={0}
+                  onClick={() => setFormData({ ...formData, color: c })}
+                >{formData.color===c && (<span className="w-4 h-4 rounded-full border-2 border-white inline-block" style={{background:'#fff2',boxShadow:'0 0 0 2px #fff'}}/>)}</button>
+              ))}
+              <button
+                type="button"
+                className={`w-8 h-8 rounded-full border-2 border-white/20 flex items-center justify-center bg-transparent" ${!formData.color ? 'border-white' : ''}`}
+                onClick={() => setFormData({ ...formData, color: '' })}
+                aria-label="No custom color"
+                tabIndex={0}
+              >
+                <span className="text-xs text-white/50">×</span>
+              </button>
+            </div>
+          </div>
           
           <div className="flex justify-end gap-3 pt-4">
             <button

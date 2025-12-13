@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { FaArrowLeft, FaCalendar, FaUser, FaClock, FaTag, FaShare, FaFacebook, FaTwitter, FaLinkedin, FaImage } from "react-icons/fa";
 import { fetchBlogBySlug } from "../utils/api";
+import SEOHead from "../components/SEO/SEOHead";
 
 import blog1 from "../assets/blogs/blog1.webp";
 import blog2 from "../assets/blogs/blog2.webp";
@@ -499,8 +500,54 @@ const BlogDetail = () => {
     rawContent: blog.content // Store raw content for rendering
   } : blog;
 
+  // Create structured data for the blog post
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": data.title,
+    "description": data.introduction?.content || data.subtitle || '',
+    "url": `https://conbyt.com/blog/${slug}`,
+    "datePublished": blog.date || new Date().toISOString(),
+    "dateModified": blog.updated_at || blog.date || new Date().toISOString(),
+    "author": {
+      "@type": "Person",
+      "name": data.author || "Conbyt Team"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Conbyt",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://conbyt.com/assets/logo.png"
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `https://conbyt.com/blog/${slug}`
+    },
+    "image": data.heroImage ? (data.heroImage.startsWith('http') ? data.heroImage : `https://conbyt.com${data.heroImage}`) : "https://conbyt.com/assets/blog-default.jpg",
+    "articleSection": data.category || "AI & Technology",
+    "keywords": data.tags?.join(', ') || data.category || "AI, machine learning",
+    "wordCount": blog.content ? blog.content.replace(/<[^>]*>/g, '').split(/\s+/).length : 0,
+    "timeRequired": `PT${data.readTime?.replace(' min read', '') || '5'}M`
+  };
+
+  const blogImageUrl = data.heroImage ? (data.heroImage.startsWith('http') ? data.heroImage : `https://conbyt.com${data.heroImage}`) : "https://conbyt.com/assets/blog-default.jpg";
+
   return (
-    <div className="min-h-screen bg-primary text-white">
+    <>
+      <SEOHead
+        title={`${data.title}`}
+        description={data.introduction?.content?.substring(0, 160) || data.subtitle?.substring(0, 160) || `Read about ${data.title} on Conbyt's AI blog.`}
+        keywords={`${data.tags?.join(', ') || data.category || 'AI, machine learning'}, blog, article, technology`}
+        canonical={`https://conbyt.com/blog/${slug}`}
+        ogTitle={data.title}
+        ogDescription={data.introduction?.content?.substring(0, 200) || data.subtitle}
+        ogImage={blogImageUrl}
+        ogType="article"
+        structuredData={structuredData}
+      />
+      <div className="min-h-screen bg-primary text-white">
       {/* Header */}
       <div className="w-full bg-secondary pt-24 pb-8">
         <div className="max-w-7xl mx-auto px-6">
@@ -819,6 +866,7 @@ const BlogDetail = () => {
         }
       `}</style>
     </div>
+    </>
   );
 };
 
