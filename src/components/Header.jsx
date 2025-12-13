@@ -3,12 +3,12 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/newlogo14.png";
 
 const navItems = [
-  { to: "/hero", label: "Home", isSection: true },
-  { to: "/aboutus", label: "About Us", isSection: true },
-  { to: "/services", label: "Services", isSection: true },
-  { to: "/case-studies", label: "Case Studies", isSection: true },
-  { to: "/blogs", label: "Blog", isSection: true },
-  { to: "/contact", label: "Contact", isSection: true },
+  { to: "/", label: "Home", isSection: false },
+  { to: "/about", label: "About Us", isSection: false },
+  { to: "/services", label: "Services", isSection: false },
+  { to: "/case-studies", label: "Case Studies", isSection: false },
+  { to: "/blog", label: "Blog", isSection: false },
+  { to: "/contact", label: "Contact", isSection: false },
 ];
 
 const Header = () => {
