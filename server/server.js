@@ -288,37 +288,12 @@ if (process.env.NODE_ENV === 'production') {
     }
   });
 
-  // Handle React routing - return all non-API requests to React app
-  app.get('*', (req, res) => {
-    // Don't serve index.html for API routes or sitemap
-    if (req.path.startsWith('/api') || req.path === '/sitemap.xml') {
-      return res.status(404).json({ error: 'API endpoint not found' });
-    }
-    
-    const indexPath = path.join(distPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      console.error(`❌ index.html not found at ${indexPath} for path: ${req.path}`);
-      res.status(404).send(`
-        <html>
-          <body>
-            <h1>404 - File Not Found</h1>
-            <p>index.html not found at: ${indexPath}</p>
-            <p>Requested path: ${req.path}</p>
-            <p>Dist path: ${distPath}</p>
-            <p>Current dir: ${process.cwd()}</p>
-          </body>
-        </html>
-      `);
-    }
-  });
 } else {
   console.log('⚠️  NODE_ENV is not "production", static files will not be served');
   console.log(`Current NODE_ENV: ${process.env.NODE_ENV}`);
 }
 
-// Dynamic sitemap generation (available in all environments)
+// Dynamic sitemap generation (available in all environments) - MUST be before catch-all route
 app.get('/sitemap.xml', async (req, res) => {
   try {
     console.log('🌐 Generating sitemap...');
@@ -408,6 +383,34 @@ app.get('/sitemap.xml', async (req, res) => {
     res.status(500).send('Error generating sitemap');
   }
 });
+
+// Handle React routing - return all non-API requests to React app (MUST be after sitemap route)
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    // Don't serve index.html for API routes
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.error(`❌ index.html not found at ${indexPath} for path: ${req.path}`);
+      res.status(404).send(`
+        <html>
+          <body>
+            <h1>404 - File Not Found</h1>
+            <p>index.html not found at: ${indexPath}</p>
+            <p>Requested path: ${req.path}</p>
+            <p>Dist path: ${distPath}</p>
+            <p>Current dir: ${process.cwd()}</p>
+          </body>
+        </html>
+      `);
+    }
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
