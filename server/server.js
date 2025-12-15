@@ -227,9 +227,11 @@ app.get('/api/test-sitemap-xml', async (req, res) => {
   }
 });
 
+// Define distPath for production use
+const distPath = path.join(__dirname, '..', 'dist');
+
 // Serve static files from React app (production)
 if (process.env.NODE_ENV === 'production') {
-  const distPath = path.join(__dirname, '..', 'dist');
   
   // Check if dist folder exists
   if (!fs.existsSync(distPath)) {
