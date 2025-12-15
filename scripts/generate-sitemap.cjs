@@ -46,8 +46,9 @@ const staticPages = [
   }
 ];
 
-// Sample blog posts and case studies for initial sitemap
-// In production, you would fetch these from your API
+// NOTE: This script generates a static sitemap for initial deployment
+// The actual production site uses dynamic sitemap generation from the Node.js server
+// which includes CMS-generated blog posts from the database
 const sampleBlogPosts = [
   { slug: 'future-of-ai-business-2024', lastmod: '2024-03-15' },
   { slug: 'machine-learning-vs-deep-learning', lastmod: '2024-03-10' },

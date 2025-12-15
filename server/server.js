@@ -146,10 +146,16 @@ if (process.env.NODE_ENV === 'production') {
     }
   }
   
-  // Serve static files (CSS, JS, images, etc.)
+  // Serve static files (CSS, JS, images, etc.) but exclude sitemap.xml
   app.use(express.static(distPath, {
     index: false, // Don't serve index.html automatically, we'll handle it
-    extensions: ['html', 'htm']
+    extensions: ['html', 'htm'],
+    // Don't serve static sitemap.xml - we generate it dynamically
+    setHeaders: (res, path) => {
+      if (path.endsWith('sitemap.xml')) {
+        res.status(404).end();
+      }
+    }
   }));
   
   // Serve index.html for root path
@@ -208,6 +214,7 @@ if (process.env.NODE_ENV === 'production') {
       // Add dynamic blog posts
       try {
         const [blogRows] = await pool.execute('SELECT slug, updated_at, created_at FROM blog_posts WHERE published = true');
+        console.log(`📝 Found ${blogRows.length} published blog posts for sitemap`);
         blogRows.forEach(blog => {
           const blogDate = blog.updated_at ? new Date(blog.updated_at).toISOString().split('T')[0] : 
                           blog.created_at ? new Date(blog.created_at).toISOString().split('T')[0] : currentDate;
@@ -221,6 +228,25 @@ if (process.env.NODE_ENV === 'production') {
         });
       } catch (error) {
         console.log('Could not fetch blogs for sitemap:', error.message);
+      }
+
+      // Add dynamic case studies
+      try {
+        const [caseStudyRows] = await pool.execute('SELECT slug, updated_at, created_at FROM case_studies');
+        console.log(`📁 Found ${caseStudyRows.length} case studies for sitemap`);
+        caseStudyRows.forEach(caseStudy => {
+          const caseStudyDate = caseStudy.updated_at ? new Date(caseStudy.updated_at).toISOString().split('T')[0] : 
+                               caseStudy.created_at ? new Date(caseStudy.created_at).toISOString().split('T')[0] : currentDate;
+          sitemap += `
+  <url>
+    <loc>${baseUrl}/case-study/${caseStudy.slug}</loc>
+    <lastmod>${caseStudyDate}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+        });
+      } catch (error) {
+        console.log('Could not fetch case studies for sitemap:', error.message);
       }
 
       sitemap += `
