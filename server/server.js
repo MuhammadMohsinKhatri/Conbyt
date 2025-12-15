@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import pool from './config/database.js';
 import caseStudiesRoutes from './routes/caseStudies.js';
 import blogsRoutes from './routes/blogs.js';
 import testimonialsRoutes from './routes/testimonials.js';
@@ -115,7 +116,115 @@ app.get('/api', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
+  res.json({ status: 'OK', message: 'Server is running', timestamp: new Date().toISOString() });
+});
+
+// Test endpoint to debug sitemap
+app.get('/api/test-sitemap-data', async (req, res) => {
+  try {
+    // Test blog posts
+    const [blogRows] = await pool.execute(`
+      SELECT slug, published, is_published
+      FROM blog_posts 
+      WHERE (published = true OR published = 1) 
+      OR (is_published = true OR is_published = 1)
+    `);
+    
+    // Test case studies
+    const [caseStudyRows] = await pool.execute(`
+      SELECT slug, is_published
+      FROM case_studies 
+      WHERE is_published = true OR is_published = 1
+    `);
+    
+    res.json({
+      blogPosts: blogRows,
+      caseStudies: caseStudyRows,
+      totalUrls: 8 + blogRows.length + caseStudyRows.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Test sitemap generation
+app.get('/api/test-sitemap-xml', async (req, res) => {
+  try {
+    const baseUrl = 'https://conbyt.com';
+    const currentDate = new Date().toISOString().split('T')[0];
+    
+    let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
+
+    // Static pages
+    const staticPages = [
+      { url: '', priority: '1.0', changefreq: 'weekly' },
+      { url: '/case-studies', priority: '0.9', changefreq: 'weekly' },
+      { url: '/blog', priority: '0.9', changefreq: 'daily' }
+    ];
+
+    // Add static pages
+    staticPages.forEach(page => {
+      sitemap += `
+  <url>
+    <loc>${baseUrl}${page.url}</loc>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`;
+    });
+
+    // Add dynamic blog posts
+    const [blogRows] = await pool.execute(`
+      SELECT slug, updated_at, created_at 
+      FROM blog_posts 
+      WHERE (published = true OR published = 1) 
+      OR (is_published = true OR is_published = 1)
+    `);
+    
+    console.log(`📝 TEST: Found ${blogRows.length} published blog posts for sitemap`);
+    blogRows.forEach(blog => {
+      const blogDate = blog.updated_at ? new Date(blog.updated_at).toISOString().split('T')[0] : 
+                      blog.created_at ? new Date(blog.created_at).toISOString().split('T')[0] : currentDate;
+      sitemap += `
+  <url>
+    <loc>${baseUrl}/blog/${blog.slug}</loc>
+    <lastmod>${blogDate}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+    });
+
+    // Add dynamic case studies
+    const [caseStudyRows] = await pool.execute(`
+      SELECT slug, updated_at, created_at 
+      FROM case_studies 
+      WHERE is_published = true OR is_published = 1
+    `);
+    
+    console.log(`📁 TEST: Found ${caseStudyRows.length} published case studies for sitemap`);
+    caseStudyRows.forEach(caseStudy => {
+      const caseStudyDate = caseStudy.updated_at ? new Date(caseStudy.updated_at).toISOString().split('T')[0] : 
+                           caseStudy.created_at ? new Date(caseStudy.created_at).toISOString().split('T')[0] : currentDate;
+      sitemap += `
+  <url>
+    <loc>${baseUrl}/case-study/${caseStudy.slug}</loc>
+    <lastmod>${caseStudyDate}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+    });
+
+    sitemap += `
+</urlset>`;
+
+    res.setHeader('Content-Type', 'application/xml');
+    res.send(sitemap);
+  } catch (error) {
+    console.error('Error generating test sitemap:', error);
+    res.status(500).send('Error generating test sitemap');
+  }
 });
 
 // Serve static files from React app (production)
@@ -213,7 +322,13 @@ if (process.env.NODE_ENV === 'production') {
 
       // Add dynamic blog posts
       try {
-        const [blogRows] = await pool.execute('SELECT slug, updated_at, created_at FROM blog_posts WHERE published = true');
+        // Check both 'published' and 'is_published' fields for compatibility
+        const [blogRows] = await pool.execute(`
+          SELECT slug, updated_at, created_at 
+          FROM blog_posts 
+          WHERE (published = true OR published = 1) 
+          OR (is_published = true OR is_published = 1)
+        `);
         console.log(`📝 Found ${blogRows.length} published blog posts for sitemap`);
         blogRows.forEach(blog => {
           const blogDate = blog.updated_at ? new Date(blog.updated_at).toISOString().split('T')[0] : 
@@ -232,8 +347,13 @@ if (process.env.NODE_ENV === 'production') {
 
       // Add dynamic case studies
       try {
-        const [caseStudyRows] = await pool.execute('SELECT slug, updated_at, created_at FROM case_studies');
-        console.log(`📁 Found ${caseStudyRows.length} case studies for sitemap`);
+        // Only include published case studies
+        const [caseStudyRows] = await pool.execute(`
+          SELECT slug, updated_at, created_at 
+          FROM case_studies 
+          WHERE is_published = true OR is_published = 1
+        `);
+        console.log(`📁 Found ${caseStudyRows.length} published case studies for sitemap`);
         caseStudyRows.forEach(caseStudy => {
           const caseStudyDate = caseStudy.updated_at ? new Date(caseStudy.updated_at).toISOString().split('T')[0] : 
                                caseStudy.created_at ? new Date(caseStudy.created_at).toISOString().split('T')[0] : currentDate;

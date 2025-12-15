@@ -66,11 +66,11 @@ async function checkSitemapData() {
     }
 
     console.log('\n🎯 Summary:');
-    console.log(`- Blog posts in sitemap: ${publishedBlogs?.length || 0}`);
+    console.log(`- Blog posts in sitemap: ${publishedBlogs.length}`);
     console.log(`- Case studies in sitemap: ${caseStudyRows.length}`);
-    console.log(`- Total dynamic URLs: ${(publishedBlogs?.length || 0) + caseStudyRows.length}`);
+    console.log(`- Total dynamic URLs: ${publishedBlogs.length + caseStudyRows.length}`);
 
-    if ((publishedBlogs?.length || 0) === 0) {
+    if (publishedBlogs.length === 0) {
       console.log('\n❌ ISSUE FOUND: No published blog posts!');
       console.log('🔧 SOLUTION: ');
       console.log('   1. Go to your CMS Dashboard');
