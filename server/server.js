@@ -350,14 +350,26 @@ app.get('/sitemap.xml', async (req, res) => {
       `);
       console.log(`📝 Found ${blogRows.length} published blog posts for sitemap`);
       blogRows.forEach(blog => {
-        const blogDate = safeFormatDate(blog.updated_at, safeFormatDate(blog.created_at, currentDate));
-        sitemap += `
+        try {
+          const blogDate = safeFormatDate(blog.updated_at, safeFormatDate(blog.created_at, currentDate));
+          sitemap += `
   <url>
     <loc>${baseUrl}/blog/${blog.slug}</loc>
     <lastmod>${blogDate}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>`;
+        } catch (itemError) {
+          console.log(`⚠️ Skipping blog post ${blog.slug} due to date error:`, itemError.message);
+          // Use fallback date for this item
+          sitemap += `
+  <url>
+    <loc>${baseUrl}/blog/${blog.slug}</loc>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+        }
       });
     } catch (error) {
       console.log('❌ Could not fetch blogs for sitemap:', error.message);
@@ -372,14 +384,26 @@ app.get('/sitemap.xml', async (req, res) => {
       `);
       console.log(`📁 Found ${caseStudyRows.length} published case studies for sitemap`);
       caseStudyRows.forEach(caseStudy => {
-        const caseStudyDate = safeFormatDate(caseStudy.updated_at, safeFormatDate(caseStudy.created_at, currentDate));
-        sitemap += `
+        try {
+          const caseStudyDate = safeFormatDate(caseStudy.updated_at, safeFormatDate(caseStudy.created_at, currentDate));
+          sitemap += `
   <url>
     <loc>${baseUrl}/case-study/${caseStudy.slug}</loc>
     <lastmod>${caseStudyDate}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>`;
+        } catch (itemError) {
+          console.log(`⚠️ Skipping case study ${caseStudy.slug} due to date error:`, itemError.message);
+          // Use fallback date for this item
+          sitemap += `
+  <url>
+    <loc>${baseUrl}/case-study/${caseStudy.slug}</loc>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+        }
       });
     } catch (error) {
       console.log('❌ Could not fetch case studies for sitemap:', error.message);
