@@ -53,14 +53,55 @@ app.use((req, res, next) => {
 
 // Middleware
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, Postman, or same-origin requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // In production, allow specific domains
+    if (process.env.NODE_ENV === 'production') {
+      const allowedOrigins = [
         'https://conbyt.com', 
         'https://www.conbyt.com',
         process.env.RAILWAY_PUBLIC_DOMAIN,
         process.env.FRONTEND_URL
-      ].filter(Boolean)
-    : ['http://localhost:3000', 'http://localhost:5173'],
+      ].filter(Boolean);
+      
+      // Also allow same-origin requests (when frontend and backend are on same domain)
+      if (allowedOrigins.some(allowed => origin.includes(allowed.replace(/https?:\/\//, '')))) {
+        return callback(null, true);
+      }
+      
+      // Check if origin matches the server's own domain (same-origin)
+      const serverUrl = process.env.RAILWAY_PUBLIC_DOMAIN || 'conbyt.com';
+      if (origin.includes(serverUrl.replace(/https?:\/\//, ''))) {
+        return callback(null, true);
+      }
+      
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      return callback(new Error('Not allowed by CORS'));
+    } else {
+      // In development, allow common dev ports
+      const allowedOrigins = [
+        'http://localhost:3000', 
+        'http://localhost:5173',
+        'http://localhost:8080',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:8080'
+      ];
+      
+      if (allowedOrigins.includes(origin) || !origin) {
+        return callback(null, true);
+      }
+      
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 };
 app.use(cors(corsOptions));

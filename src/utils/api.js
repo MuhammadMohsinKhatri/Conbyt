@@ -1,14 +1,42 @@
 // API Base URL - uses environment variable or defaults to relative path for production
 // In development, use localhost. In production, use relative path (same domain)
 const getApiBaseUrl = () => {
+  // Always check environment variable first
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
+  
   // In production (same domain), use relative path
   if (import.meta.env.PROD) {
     return '/api';
   }
-  // In development, use localhost (server runs on port 5000)
+  
+  // In development mode
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const port = window.location.port;
+    
+    // If we're accessing from the same origin (e.g., server serves both frontend and backend)
+    // Use relative path - this works when server is serving static files
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      // Production-like environment (Railway, etc.) - use relative path
+      return '/api';
+    }
+    
+    // Local development - try to detect if server is on different port
+    // Default to 5000, but allow override via environment
+    const serverPort = import.meta.env.VITE_SERVER_PORT || '5000';
+    
+    // If frontend is on a different port than backend, use full URL
+    if (port && port !== serverPort) {
+      return `http://${hostname}:${serverPort}/api`;
+    }
+    
+    // Same port or no port specified - use relative path
+    return '/api';
+  }
+  
+  // Fallback for SSR or non-browser environments
   return 'http://localhost:5000/api';
 };
 
@@ -19,7 +47,10 @@ if (typeof window !== 'undefined') {
   console.log('🔍 API Configuration:', {
     baseUrl: API_BASE_URL,
     isProduction: import.meta.env.PROD,
-    viteApiUrl: import.meta.env.VITE_API_URL
+    viteApiUrl: import.meta.env.VITE_API_URL,
+    currentOrigin: window.location.origin,
+    hostname: window.location.hostname,
+    port: window.location.port
   });
 }
 

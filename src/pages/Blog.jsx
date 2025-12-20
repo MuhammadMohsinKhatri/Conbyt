@@ -37,7 +37,9 @@ const Blog = () => {
       setBlogPosts(blogs);
     } catch (err) {
       console.error('Error loading blogs:', err);
-      setError('Failed to load blog posts');
+      // Use the detailed error message from the API
+      const errorMessage = err.message || 'Failed to load blog posts';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
