@@ -119,6 +119,21 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running', timestamp: new Date().toISOString() });
 });
 
+// Helper function to safely parse and format dates
+function safeFormatDate(dateValue, fallbackDate) {
+  if (!dateValue) return fallbackDate;
+  try {
+    const date = new Date(dateValue);
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return fallbackDate;
+    }
+    return date.toISOString().split('T')[0];
+  } catch (error) {
+    return fallbackDate;
+  }
+}
+
 // Test endpoint to debug sitemap
 app.get('/api/test-sitemap-data', async (req, res) => {
   try {
@@ -185,8 +200,7 @@ app.get('/api/test-sitemap-xml', async (req, res) => {
     
     console.log(`📝 TEST: Found ${blogRows.length} published blog posts for sitemap`);
     blogRows.forEach(blog => {
-      const blogDate = blog.updated_at ? new Date(blog.updated_at).toISOString().split('T')[0] : 
-                      blog.created_at ? new Date(blog.created_at).toISOString().split('T')[0] : currentDate;
+      const blogDate = safeFormatDate(blog.updated_at, safeFormatDate(blog.created_at, currentDate));
       sitemap += `
   <url>
     <loc>${baseUrl}/blog/${blog.slug}</loc>
@@ -205,8 +219,7 @@ app.get('/api/test-sitemap-xml', async (req, res) => {
     
     console.log(`📁 TEST: Found ${caseStudyRows.length} published case studies for sitemap`);
     caseStudyRows.forEach(caseStudy => {
-      const caseStudyDate = caseStudy.updated_at ? new Date(caseStudy.updated_at).toISOString().split('T')[0] : 
-                           caseStudy.created_at ? new Date(caseStudy.created_at).toISOString().split('T')[0] : currentDate;
+      const caseStudyDate = safeFormatDate(caseStudy.updated_at, safeFormatDate(caseStudy.created_at, currentDate));
       sitemap += `
   <url>
     <loc>${baseUrl}/case-study/${caseStudy.slug}</loc>
@@ -337,8 +350,7 @@ app.get('/sitemap.xml', async (req, res) => {
       `);
       console.log(`📝 Found ${blogRows.length} published blog posts for sitemap`);
       blogRows.forEach(blog => {
-        const blogDate = blog.updated_at ? new Date(blog.updated_at).toISOString().split('T')[0] : 
-                        blog.created_at ? new Date(blog.created_at).toISOString().split('T')[0] : currentDate;
+        const blogDate = safeFormatDate(blog.updated_at, safeFormatDate(blog.created_at, currentDate));
         sitemap += `
   <url>
     <loc>${baseUrl}/blog/${blog.slug}</loc>
@@ -360,8 +372,7 @@ app.get('/sitemap.xml', async (req, res) => {
       `);
       console.log(`📁 Found ${caseStudyRows.length} published case studies for sitemap`);
       caseStudyRows.forEach(caseStudy => {
-        const caseStudyDate = caseStudy.updated_at ? new Date(caseStudy.updated_at).toISOString().split('T')[0] : 
-                             caseStudy.created_at ? new Date(caseStudy.created_at).toISOString().split('T')[0] : currentDate;
+        const caseStudyDate = safeFormatDate(caseStudy.updated_at, safeFormatDate(caseStudy.created_at, currentDate));
         sitemap += `
   <url>
     <loc>${baseUrl}/case-study/${caseStudy.slug}</loc>
