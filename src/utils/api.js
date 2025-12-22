@@ -54,6 +54,9 @@ if (typeof window !== 'undefined') {
   });
 }
 
+// Import auth utilities for automatic logout
+import { logout, isAuthError } from './auth.js';
+
 // Helper function to handle fetch requests with proper error handling
 const handleFetch = async (url, options = {}) => {
   try {
@@ -74,7 +77,21 @@ const handleFetch = async (url, options = {}) => {
           // Use default error message
         }
       }
-      throw new Error(errorMessage);
+      
+      // Create error object with status
+      const error = new Error(errorMessage);
+      error.status = response.status;
+      
+      // Automatically logout on 401 (Unauthorized) errors
+      if (response.status === 401) {
+        console.warn('🔐 Authentication failed (401). Logging out...');
+        // Use setTimeout to avoid blocking the error throw
+        setTimeout(() => {
+          logout();
+        }, 100);
+      }
+      
+      throw error;
     }
     
     // Parse JSON response
@@ -88,6 +105,17 @@ const handleFetch = async (url, options = {}) => {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error(`Network error: Unable to connect to server at ${url}. Please check if the server is running.`);
     }
+    
+    // Check if it's an auth error and logout if needed
+    if (isAuthError(error) && error.status === 401) {
+      // Already handled above, but ensure logout happens
+      if (typeof window !== 'undefined' && localStorage.getItem('cms_token')) {
+        setTimeout(() => {
+          logout();
+        }, 100);
+      }
+    }
+    
     // Re-throw other errors
     throw error;
   }

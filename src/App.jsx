@@ -4,6 +4,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import ToastProvider from "./contexts/ToastContext";
+import CMSRouteGuard from "./components/CMSRouteGuard";
 
 const Home = lazy(() => import("./pages/Home"));
 const CaseStudies = lazy(() => import("./pages/CaseStudies"));
@@ -72,21 +73,21 @@ function AppContent() {
           {/* CMS Routes */}
           <Route path="/cms/login" element={<CMSLogin />} />
           <Route path="/cms/register" element={<CMSRegister />} />
-          <Route path="/cms/dashboard" element={<CMSDashboard />} />
-          <Route path="/cms/blogs" element={<Blogs />} />
-          <Route path="/cms/blogs/new" element={<BlogEditor />} />
-          <Route path="/cms/blogs/edit/:id" element={<BlogEditor />} />
-          <Route path="/cms/contact" element={<ContactSubmissions />} />
-          <Route path="/cms/clients" element={<Clients />} />
-          <Route path="/cms/clients/new" element={<Clients />} />
-          <Route path="/cms/projects" element={<Projects />} />
-          <Route path="/cms/projects/new" element={<Projects />} />
-          <Route path="/cms/milestones" element={<Milestones />} />
-          <Route path="/cms/payments" element={<Payments />} />
-          <Route path="/cms/portfolios" element={<Portfolios />} />
-          <Route path="/cms/portfolios/new" element={<Portfolios />} />
-          <Route path="/cms/tasks" element={<Tasks />} />
-          <Route path="/cms/users" element={<Users />} />
+          <Route path="/cms/dashboard" element={<CMSRouteGuard><CMSDashboard /></CMSRouteGuard>} />
+          <Route path="/cms/blogs" element={<CMSRouteGuard><Blogs /></CMSRouteGuard>} />
+          <Route path="/cms/blogs/new" element={<CMSRouteGuard><BlogEditor /></CMSRouteGuard>} />
+          <Route path="/cms/blogs/edit/:id" element={<CMSRouteGuard><BlogEditor /></CMSRouteGuard>} />
+          <Route path="/cms/contact" element={<CMSRouteGuard><ContactSubmissions /></CMSRouteGuard>} />
+          <Route path="/cms/clients" element={<CMSRouteGuard><Clients /></CMSRouteGuard>} />
+          <Route path="/cms/clients/new" element={<CMSRouteGuard><Clients /></CMSRouteGuard>} />
+          <Route path="/cms/projects" element={<CMSRouteGuard><Projects /></CMSRouteGuard>} />
+          <Route path="/cms/projects/new" element={<CMSRouteGuard><Projects /></CMSRouteGuard>} />
+          <Route path="/cms/milestones" element={<CMSRouteGuard><Milestones /></CMSRouteGuard>} />
+          <Route path="/cms/payments" element={<CMSRouteGuard><Payments /></CMSRouteGuard>} />
+          <Route path="/cms/portfolios" element={<CMSRouteGuard><Portfolios /></CMSRouteGuard>} />
+          <Route path="/cms/portfolios/new" element={<CMSRouteGuard><Portfolios /></CMSRouteGuard>} />
+          <Route path="/cms/tasks" element={<CMSRouteGuard><Tasks /></CMSRouteGuard>} />
+          <Route path="/cms/users" element={<CMSRouteGuard><Users /></CMSRouteGuard>} />
         </Routes>
         </Suspense>
       </main>
